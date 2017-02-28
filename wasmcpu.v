@@ -1,6 +1,6 @@
 
 //-----------------------------------------------------------------------------
-//-- Microbio.  Mini procesador hola-mundo
+//-- wasmcpu.  Mini procesador hola-mundo
 //-----------------------------------------------------------------------------
 //-- (C) BQ November 2015. Written by Juan Gonzalez
 //-----------------------------------------------------------------------------
@@ -21,8 +21,8 @@
 `default_nettype none
 `include "divider.vh"
 
-//-- Procesador microbio
-module microbio (input wire clk,          //-- Reloj del sistema
+//-- Procesador wasmcpu
+module wasmcpu (input wire clk,          //-- Reloj del sistema
                  input wire rstn_ini,     //-- Reset
                  output wire [3:0] leds,  //-- leds
                  output wire stop);       //-- Indicador de stop
