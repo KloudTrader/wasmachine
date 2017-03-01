@@ -36,7 +36,3 @@ assign clk_out = (divcounter == 0) ? 1 : 0;
 
 
 endmodule
-
-
-
-

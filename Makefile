@@ -1,29 +1,27 @@
 #----------------------------------------
 #-- Establecer nombre del componente
 #----------------------------------------
+SRC = src
+
 NAME = wasmcpu
-DEPS = genrom.v dividerp1.v
+DEPS = $(SRC)/dividerp1.v $(SRC)/genrom.v $(SRC)/$(NAME).v
 
 NAME2 = vacio1
-DEPS2 =
+DEPS2 = $(SRC)/$(NAME2).v
 
 
 #-------------------------------------------------------
 #-- Objetivo por defecto: hacer simulacion y sintesis
 #-------------------------------------------------------
-all: sim sint
+all: test sint
 
 
-#----------------------------------------------
-#-- make sim
 #----------------------------------------------
 #-- Objetivo para hacer la simulacion del
 #-- banco de pruebas
 #----------------------------------------------
-sim: $(NAME)_tb.vcd
+test: $(NAME)_tb.vcd
 
-#-----------------------------------------------
-#-  make sint
 #-----------------------------------------------
 #-  Objetivo para realizar la sintetis completa
 #- y dejar el diseno listo para su grabacion en
@@ -35,33 +33,33 @@ sint: $(NAME).bin
 #-------------------------------
 #-- Compilacion y simulacion
 #-------------------------------
-$(NAME)_tb.vcd: $(NAME).v $(DEPS) $(NAME)_tb.v prog.list
+$(NAME)_tb.vcd: $(DEPS) test/$(NAME)_tb.v test/prog.list
 
 	#-- Compilar
-	iverilog $(NAME).v $(DEPS) $(NAME)_tb.v -o $(NAME)_tb.out
+	iverilog -I $(SRC) $(DEPS) test/$(NAME)_tb.v -o $(NAME)_tb.out
 
 	#-- Simular
 	./$(NAME)_tb.out
 
 	#-- Ver visualmente la simulacion con gtkwave
-	gtkwave $@ $(NAME)_tb.gtkw &
+	gtkwave $@ test/$(NAME)_tb.gtkw &
 
 #------------------------------
 #-- Sintesis completa
 #------------------------------
-$(NAME).bin: $(NAME).pcf $(NAME).v $(DEPS) prog.list
+$(NAME).bin: resources/$(NAME).pcf $(DEPS) test/prog.list
 
 	#-- Sintesis
-	yosys -p "synth_ice40 -blif $(NAME).blif" $(NAME).v $(DEPS)
+	yosys -p "synth_ice40 -blif $(NAME).blif" $(DEPS)
 
 	#-- Place & route
-	arachne-pnr -d 1k -p $(NAME).pcf $(NAME).blif -o $(NAME).txt
+	arachne-pnr -d 1k -p resources/$(NAME).pcf $(NAME).blif -o $(NAME).txt
 
 	#-- Generar binario final, listo para descargar en fgpa
 	icepack $(NAME).txt $(NAME).bin
 
 
-sim2: $(NAME2)_tb.vcd
+test2: $(NAME2)_tb.vcd
 
 #-----------------------------------------------
 #-  make sint
@@ -76,10 +74,10 @@ sint2: $(NAME2).bin
 #-------------------------------
 #-- Compilacion y simulacion
 #-------------------------------
-$(NAME2)_tb.vcd: $(NAME2).v $(DEPS2) $(NAME2)_tb.v
+$(NAME2)_tb.vcd: $(DEPS2) test/$(NAME2)_tb.v
 
 	#-- Compilar
-	iverilog $^ -o $(NAME2)_tb.out
+	iverilog -I $(SRC) $^ -o $(NAME2)_tb.out
 
 	#-- Simular
 	./$(NAME2)_tb.out
@@ -90,13 +88,13 @@ $(NAME2)_tb.vcd: $(NAME2).v $(DEPS2) $(NAME2)_tb.v
 #------------------------------
 #-- Sintesis completa
 #------------------------------
-$(NAME2).bin: $(NAME2).pcf $(NAME2).v $(DEPS2)
+$(NAME2).bin: resources/$(NAME2).pcf $(DEPS2)
 
 	#-- Sintesis
-	yosys -p "synth_ice40 -blif $(NAME2).blif" $(NAME2).v $(DEPS2)
+	yosys -p "synth_ice40 -blif $(NAME2).blif" $(DEPS2)
 
 	#-- Place & route
-	arachne-pnr -d 1k -p $(NAME2).pcf $(NAME2).blif -o $(NAME2).txt
+	arachne-pnr -d 1k -p resources/$(NAME2).pcf $(NAME2).blif -o $(NAME2).txt
 
 	#-- Generar binario final, listo para descargar en fgpa
 	icepack $(NAME2).txt $(NAME2).bin
