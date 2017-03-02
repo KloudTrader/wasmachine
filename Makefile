@@ -1,7 +1,8 @@
 #----------------------------------------
 #-- Establecer nombre del componente
 #----------------------------------------
-SRC = src
+SRC   = src
+BUILD = build
 
 NAME = wasmcpu
 DEPS = $(SRC)/dividerp1.v $(SRC)/genrom.v $(SRC)/$(NAME).v
@@ -13,14 +14,21 @@ DEPS2 = $(SRC)/$(NAME2).v
 #-------------------------------------------------------
 #-- Objetivo por defecto: hacer simulacion y sintesis
 #-------------------------------------------------------
-all: test sint
+all: $(BUILD) test sint
+
+
+#
+# Auxiliar objectives
+#
+$(BUILD):
+	mkdir -p $(BUILD)
 
 
 #----------------------------------------------
 #-- Objetivo para hacer la simulacion del
 #-- banco de pruebas
 #----------------------------------------------
-test: $(NAME)_tb.vcd
+test: $(BUILD)/$(NAME)_tb.vcd
 
 #-----------------------------------------------
 #-  Objetivo para realizar la sintetis completa
@@ -33,13 +41,14 @@ sint: $(NAME).bin
 #-------------------------------
 #-- Compilacion y simulacion
 #-------------------------------
-$(NAME)_tb.vcd: $(DEPS) test/$(NAME)_tb.v test/prog.list
+$(BUILD)/$(NAME)_tb.vcd: $(DEPS) test/$(NAME)_tb.v test/prog.list
 
 	#-- Compilar
-	iverilog -I $(SRC) $(DEPS) test/$(NAME)_tb.v -o $(NAME)_tb.out
+	iverilog -I $(SRC) $(DEPS) test/$(NAME)_tb.v -o $(BUILD)/$(NAME)_tb
 
 	#-- Simular
-	./$(NAME)_tb.out
+	cp test/prog.list $(BUILD)
+	(cd $(BUILD) && ./$(NAME)_tb)
 
 	#-- Ver visualmente la simulacion con gtkwave
 	gtkwave $@ test/$(NAME)_tb.gtkw &
@@ -59,7 +68,7 @@ $(NAME).bin: resources/$(NAME).pcf $(DEPS) test/prog.list
 	icepack $(NAME).txt $(NAME).bin
 
 
-test2: $(NAME2)_tb.vcd
+test2: $(BUILD)/$(NAME2)_tb.vcd
 
 #-----------------------------------------------
 #-  make sint
@@ -74,13 +83,14 @@ sint2: $(NAME2).bin
 #-------------------------------
 #-- Compilacion y simulacion
 #-------------------------------
-$(NAME2)_tb.vcd: $(DEPS2) test/$(NAME2)_tb.v
+$(BUILD)/$(NAME2)_tb.vcd: $(DEPS2) test/$(NAME2)_tb.v
 
 	#-- Compilar
-	iverilog -I $(SRC) $^ -o $(NAME2)_tb.out
+	iverilog -I $(SRC) $^ -o $(BUILD)/$(NAME2)_tb
 
 	#-- Simular
-	./$(NAME2)_tb.out
+	cp test/prog.list $(BUILD)
+	(cd $(BUILD) && ./$(NAME2)_tb)
 
 	#-- Ver visualmente la simulacion con gtkwave
 	gtkwave $@ $(NAME2)_tb.gtkw &
@@ -102,6 +112,6 @@ $(NAME2).bin: resources/$(NAME2).pcf $(DEPS2)
 
 #-- Limpiar todo
 clean:
-	rm -f *.bin *.txt *.blif *.out *.vcd *~
+	rm -rf *.bin *.txt *.blif $(BUILD) *~
 
 .PHONY: all clean
