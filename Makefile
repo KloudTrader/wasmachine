@@ -10,6 +10,10 @@ DEPS = $(SRC)/dividerp1.v $(SRC)/genrom.v $(SRC)/$(NAME).v
 NAME2 = vacio1
 DEPS2 = $(SRC)/$(NAME2).v
 
+IVERILOG = iverilog -I $(SRC)
+VVP      = vvp -N
+
+
 
 #-------------------------------------------------------
 #-- Objetivo por defecto: hacer simulacion y sintesis
@@ -44,11 +48,11 @@ sint: $(NAME).bin
 $(BUILD)/$(NAME)_tb.vcd: $(DEPS) test/$(NAME)_tb.v test/prog.list
 
 	#-- Compilar
-	iverilog -I $(SRC) $(DEPS) test/$(NAME)_tb.v -o $(BUILD)/$(NAME)_tb
+	$(IVERILOG) $(DEPS) test/$(NAME)_tb.v -o $(BUILD)/$(NAME)_tb
 
 	#-- Simular
 	cp test/prog.list $(BUILD)
-	(cd $(BUILD) && ./$(NAME)_tb)
+	(cd $(BUILD) && $(VVP) $(NAME)_tb)
 
 	#-- Ver visualmente la simulacion con gtkwave
 	gtkwave $@ test/$(NAME)_tb.gtkw &
@@ -86,11 +90,11 @@ sint2: $(NAME2).bin
 $(BUILD)/$(NAME2)_tb.vcd: $(DEPS2) test/$(NAME2)_tb.v
 
 	#-- Compilar
-	iverilog -I $(SRC) $^ -o $(BUILD)/$(NAME2)_tb
+	$(IVERILOG) $^ -o $(BUILD)/$(NAME2)_tb
 
 	#-- Simular
 	cp test/prog.list $(BUILD)
-	(cd $(BUILD) && ./$(NAME2)_tb)
+	(cd $(BUILD) && $(VVP) $(NAME2)_tb)
 
 	#-- Ver visualmente la simulacion con gtkwave
 	gtkwave $@ $(NAME2)_tb.gtkw &
