@@ -42,6 +42,19 @@ test: $(BUILD)/$(NAME)_tb.vcd
 sint: $(NAME).bin
 
 
+test-stack: $(BUILD) $(BUILD)/stack_tb.vcd
+
+$(BUILD)/stack_tb.vcd: $(BUILD)/stack_tb
+	(cd $(BUILD) && $(VVP) stack_tb) || (rm $(BUILD)/stack_tb && exit 1)
+
+$(BUILD)/stack_tb: test/assert.vh test/stack_tb.v $(SRC)/stack.v
+	$(IVERILOG) -I test test/stack_tb.v $(SRC)/stack.v -o $(BUILD)/stack_tb
+
+view-stack: test-stack
+	gtkwave $(BUILD)/stack_tb.vcd test/stack_tb.gtkw
+
+
+
 #-------------------------------
 #-- Compilacion y simulacion
 #-------------------------------
