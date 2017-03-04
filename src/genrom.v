@@ -1,45 +1,42 @@
-//----------------------------------------------------------------------------
-//-- Memoria ROM genérica
-//------------------------------------------
-//-- (C) BQ. October 2015. Written by Juan Gonzalez (Obijuan)
-//-- GPL license
-//----------------------------------------------------------------------------
-//-- Memoria con los siguientes parametros:
-//--  * AW: Numero de bits de las direcciones
-//--  * DW: Numero de bits de los datos
-//--  * ROMFILE: Fichero a usar para cargar la memoria
-//--
-//-- Con este componente podemos hacer memorias rom de cualquier tamaño
-//----------------------------------------------------------------------------
+/**
+ * Generic ROM memory
+ *
+ * (C) BQ. October 2015. Written by Juan Gonzalez (Obijuan)
+ * GPL license
+ *
+ * Memory with the next parameters:
+ * - AW: Number of bits for directions
+ * - DW: Number of bits for data
+ * - ROMFILE: File to be used to load the memory
+ */
 
-module genrom #(             //-- Parametros
-         parameter AW = 5,   //-- Bits de las direcciones (Adress width)
-         parameter DW = 8)   //-- Bits de los datos (Data witdh)
+module genrom #(     // Parameters
+  parameter AW = 5,  // Address width in bits
+  parameter DW = 8   // Data witdh in bits
+)
+(                            // Ports
+  input clk,                 // Global clock signal
+  input wire [AW-1: 0] addr, // Address
+  output reg [DW-1: 0] data  // Output data
+);
 
-       (                              //-- Puertos
-         input clk,                   //-- Señal de reloj global
-         input wire [AW-1: 0] addr,   //-- Direcciones
-         output reg [DW-1: 0] data);  //-- Dato de salida
+  // Parameter: name of the file with the ROM content
+  parameter ROMFILE = "prog.list";
 
-//-- Parametro: Nombre del fichero con el contenido de la ROM
-parameter ROMFILE = "prog.list";
+  // Calc the number of total positions of memory
+  localparam NPOS = 2 ** AW;
 
-//-- Calcular el numero de posiciones totales de memoria
-localparam NPOS = 2 ** AW;
-
-  //-- Memoria
+  // Memory
   reg [DW-1: 0] rom [0: NPOS-1];
 
-  //-- Lectura de la memoria
+  // Read the memory
   always @(posedge clk) begin
     data <= rom[addr];
   end
 
-//-- Cargar en la memoria el fichero ROMFILE
-//-- Los valores deben estan dados en hexadecimal
-initial begin
-  $readmemh(ROMFILE, rom);
-end
-
+  // Load in memory the `ROMFILE` file. Values must be given in hexadecimal
+  initial begin
+    $readmemh(ROMFILE, rom);
+  end
 
 endmodule
