@@ -42,6 +42,19 @@ test: $(BUILD)/$(NAME)_tb.vcd
 sint: $(NAME).bin
 
 
+test-genrom: $(BUILD) $(BUILD)/genrom_tb.vcd
+
+$(BUILD)/genrom_tb.vcd: $(BUILD)/genrom_tb
+	cp test/prog.list $(BUILD)
+	(cd $(BUILD) && $(VVP) genrom_tb) || (rm $(BUILD)/genrom_tb && exit 1)
+
+$(BUILD)/genrom_tb: test/assert.vh test/genrom_tb.v $(SRC)/genrom.v
+	$(IVERILOG) -I test test/genrom_tb.v $(SRC)/genrom.v -o $(BUILD)/genrom_tb
+
+view-genrom: test-genrom
+	gtkwave $(BUILD)/genrom_tb.vcd test/genrom_tb.gtkw
+
+
 test-stack: $(BUILD) $(BUILD)/stack_tb.vcd
 
 $(BUILD)/stack_tb.vcd: $(BUILD)/stack_tb
@@ -52,7 +65,6 @@ $(BUILD)/stack_tb: test/assert.vh test/stack_tb.v $(SRC)/stack.v
 
 view-stack: test-stack
 	gtkwave $(BUILD)/stack_tb.vcd test/stack_tb.gtkw
-
 
 
 #-------------------------------
