@@ -10,7 +10,7 @@ DEPS = $(SRC)/dividerp1.v $(SRC)/genrom.v $(SRC)/$(NAME).v
 NAME2 = vacio1
 DEPS2 = $(SRC)/$(NAME2).v
 
-IVERILOG = iverilog -I $(SRC)
+IVERILOG = iverilog -I $(SRC) -y $(SRC)
 VVP      = vvp -N
 
 
@@ -46,10 +46,7 @@ test-genrom: $(BUILD) $(BUILD)/genrom_tb.vcd
 
 $(BUILD)/genrom_tb.vcd: $(BUILD)/genrom_tb
 	cp test/prog.list $(BUILD)
-	(cd $(BUILD) && $(VVP) genrom_tb) || (rm $(BUILD)/genrom_tb && exit 1)
-
-$(BUILD)/genrom_tb: test/assert.vh test/genrom_tb.v $(SRC)/genrom.v
-	$(IVERILOG) -I test test/genrom_tb.v $(SRC)/genrom.v -o $(BUILD)/genrom_tb
+	(cd $(BUILD) && $(VVP) ../$<) || (rm $< && exit 1)
 
 view-genrom: test-genrom
 	gtkwave $(BUILD)/genrom_tb.vcd test/genrom_tb.gtkw
@@ -58,13 +55,14 @@ view-genrom: test-genrom
 test-stack: $(BUILD) $(BUILD)/stack_tb.vcd
 
 $(BUILD)/stack_tb.vcd: $(BUILD)/stack_tb
-	(cd $(BUILD) && $(VVP) stack_tb) || (rm $(BUILD)/stack_tb && exit 1)
-
-$(BUILD)/stack_tb: test/assert.vh test/stack_tb.v $(SRC)/stack.v
-	$(IVERILOG) -I test test/stack_tb.v $(SRC)/stack.v -o $(BUILD)/stack_tb
+	(cd $(BUILD) && $(VVP) ../$<) || (rm $< && exit 1)
 
 view-stack: test-stack
 	gtkwave $(BUILD)/stack_tb.vcd test/stack_tb.gtkw
+
+
+$(BUILD)/%_tb: $(SRC)/%.v test/assert.vh test/%_tb.v
+	$(IVERILOG) -I test test/$(@F).v -o $@
 
 
 #-------------------------------
