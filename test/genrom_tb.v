@@ -1,23 +1,26 @@
 `include "assert.vh"
 
 
-module Genrom_tb();
+module genrom_tb();
 
-  parameter DW = 8;
+  parameter AW    = 4;
+  parameter DW    = 8;
+  parameter EXTRA = 4;
 
-  reg             clk = 0;
-  reg  [3:0]      addr;
-  reg  [1:0]      len;
-  wire [8*DW-1:0] data;
-  wire            error;
+  reg                    clk = 0;
+  logic[AW-1:0]          addr;
+  logic[EXTRA-1:0]       extra;
+  wire [EXTRA**2*DW-1:0] data;
+  wire                   error;
 
-  Genrom #(
-    .AW(4)
+  genrom #(
+    .AW(AW),
+    .DW(DW)
   )
   dut(
     .clk(clk),
     .addr(addr),
-    .len(len),
+    .extra(extra),
     .data(data),
     .error(error)
   );
@@ -26,39 +29,51 @@ module Genrom_tb();
 
   initial begin
     $dumpfile("genrom_tb.vcd");
-    $dumpvars(0, Genrom_tb);
+    $dumpvars(0, genrom_tb);
 
-    addr <= 0;
-    len  <= 0;
-    #2
-    `assert(data , 64'h81);
-    `assert(error, 0);
-
-    addr <= 1;
-    len  <= 1;
-    #2
-    `assert(data , 64'h0082);
-    `assert(error, 0);
-
-    addr <= 3;
-    len  <= 2;
-    #2
-    `assert(data , 64'h00840088);
-    `assert(error, 0);
-
-    addr <= 0;
-    len  <= 3;
-    #2
-    `assert(data , 64'h8100820084008800);
-    `assert(error, 0);
-
-    addr <= 15;
-    len  <= 0;
+    addr  <= 0;
+    extra <= 0;
     #2
     `assert(error, 0);
+    `assert(data , 128'h81);
 
-    addr <= 15;
-    len  <= 1;
+    addr  <= 1;
+    extra <= 1;
+    #2
+    `assert(error, 0);
+    `assert(data , 128'h0082);
+
+    addr  <= 3;
+    extra <= 3;
+    #2
+    `assert(error, 0);
+    `assert(data , 128'h00840088);
+
+    addr  <= 0;
+    extra <= 4;
+    #2
+    `assert(error, 0);
+    `assert(data , 128'h8100820084);
+
+    addr  <= 0;
+    extra <= 7;
+    #2
+    `assert(error, 0);
+    `assert(data , 128'h8100820084008800);
+
+    addr  <= 0;
+    extra <= 15;
+    #2
+    `assert(error, 0);
+    `assert(data , 128'h81008200840088008140000000000000);
+
+    addr  <= 15;
+    extra <= 0;
+    #2
+    `assert(error, 0);
+
+    addr  <= 15;
+    extra <= 1;
     #2
     `assert(error, 1);
 
