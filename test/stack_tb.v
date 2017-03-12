@@ -12,7 +12,7 @@ module Stack_tb();
   wire [WIDTH - 1:0] tos;
   wire [1:0]         status;
 
-  Stack #(
+  stack #(
     .WIDTH(WIDTH),
     .DEPTH(0)
   )

@@ -8,7 +8,7 @@
 
 `default_nettype none
 
-module Stack
+module stack
 #(
   parameter WIDTH = 8,  // bits
   parameter DEPTH = 8   // frames (exponential)
@@ -31,7 +31,7 @@ module Stack
   localparam UNDERFLOW = 2;
   localparam OVERFLOW  = 3;
 
-  localparam MAX_STACK  = 1 << DEPTH;
+  localparam MAX_STACK = 1 << DEPTH;
 
   reg [WIDTH - 1:0] stack [0:MAX_STACK - 1];
   reg [DEPTH - 1:0] index = 0;

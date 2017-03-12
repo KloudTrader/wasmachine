@@ -15,7 +15,8 @@ module genrom_tb();
 
   genrom #(
     .AW(AW),
-    .DW(DW)
+    .DW(DW),
+    .ROMFILE("genrom.hex")
   )
   dut(
     .clk(clk),
