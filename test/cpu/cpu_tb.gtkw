@@ -1,0 +1,120 @@
+[*]
+[*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
+[*] Sun Mar 12 00:48:59 2017
+[*]
+[dumpfile] "/home/piranna/Proyectos/wasmachine/build/cpu/i64.const.vcd"
+[dumpfile_mtime] "Sun Mar 12 00:47:47 2017"
+[dumpfile_size] 4955
+[savefile] "/home/piranna/Proyectos/wasmachine/test/cpu/cpu_tb.gtkw"
+[timestart] 7
+[size] 1920 1032
+[pos] -1 -1
+*-1.546326 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] cpu_tb.
+[treeopen] cpu_tb.dut.
+[sst_width] 225
+[signals_width] 206
+[sst_expanded] 1
+[sst_vpaned_height] 293
+@28
+cpu_tb.dut.clk
+cpu_tb.dut.reset
+@200
+-
+@28
+cpu_tb.dut.step[2:0]
+@22
+cpu_tb.dut.opcode[7:0]
+@28
+cpu_tb.dut.trap[2:0]
+@200
+-
+@22
+cpu_tb.result[63:0]
+@28
+cpu_tb.result_empty
+@200
+-
+@22
+cpu_tb.dut.rom_extra[3:0]
+cpu_tb.dut.rom_data[127:0]
+@28
+cpu_tb.dut.rom_error
+@200
+-
+@28
+cpu_tb.dut.stack_op[1:0]
+@22
+cpu_tb.dut.stack_tos[65:0]
+cpu_tb.dut.stack_data[65:0]
+@28
+cpu_tb.dut.stack_status[1:0]
+@200
+-
+@22
+cpu_tb.dut.stack_aux[65:0]
+@200
+-
+@c00022
+cpu_tb.dut.leb128_i0[7:0]
+@28
+(0)cpu_tb.dut.leb128_i0[7:0]
+(1)cpu_tb.dut.leb128_i0[7:0]
+(2)cpu_tb.dut.leb128_i0[7:0]
+(3)cpu_tb.dut.leb128_i0[7:0]
+(4)cpu_tb.dut.leb128_i0[7:0]
+(5)cpu_tb.dut.leb128_i0[7:0]
+(6)cpu_tb.dut.leb128_i0[7:0]
+(7)cpu_tb.dut.leb128_i0[7:0]
+@1401200
+-group_end
+@c00022
+cpu_tb.dut.leb128_i1[7:0]
+@28
+(0)cpu_tb.dut.leb128_i1[7:0]
+(1)cpu_tb.dut.leb128_i1[7:0]
+(2)cpu_tb.dut.leb128_i1[7:0]
+(3)cpu_tb.dut.leb128_i1[7:0]
+(4)cpu_tb.dut.leb128_i1[7:0]
+(5)cpu_tb.dut.leb128_i1[7:0]
+(6)cpu_tb.dut.leb128_i1[7:0]
+(7)cpu_tb.dut.leb128_i1[7:0]
+@1401200
+-group_end
+@22
+cpu_tb.dut.leb128_i2[7:0]
+cpu_tb.dut.leb128_i3[7:0]
+cpu_tb.dut.leb128_i4[7:0]
+cpu_tb.dut.leb128_i5[7:0]
+cpu_tb.dut.leb128_i6[7:0]
+@c00022
+cpu_tb.dut.leb128_i7[7:0]
+@28
+(0)cpu_tb.dut.leb128_i7[7:0]
+(1)cpu_tb.dut.leb128_i7[7:0]
+(2)cpu_tb.dut.leb128_i7[7:0]
+(3)cpu_tb.dut.leb128_i7[7:0]
+(4)cpu_tb.dut.leb128_i7[7:0]
+(5)cpu_tb.dut.leb128_i7[7:0]
+(6)cpu_tb.dut.leb128_i7[7:0]
+(7)cpu_tb.dut.leb128_i7[7:0]
+@1401200
+-group_end
+@c00022
+cpu_tb.dut.leb128_i8[7:0]
+@28
+(0)cpu_tb.dut.leb128_i8[7:0]
+(1)cpu_tb.dut.leb128_i8[7:0]
+(2)cpu_tb.dut.leb128_i8[7:0]
+(3)cpu_tb.dut.leb128_i8[7:0]
+(4)cpu_tb.dut.leb128_i8[7:0]
+(5)cpu_tb.dut.leb128_i8[7:0]
+(6)cpu_tb.dut.leb128_i8[7:0]
+(7)cpu_tb.dut.leb128_i8[7:0]
+@1401200
+-group_end
+@22
+cpu_tb.dut.leb128_out[63:0]
+cpu_tb.dut.leb128_len[3:0]
+[pattern_trace] 1
+[pattern_trace] 0

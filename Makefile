@@ -4,7 +4,7 @@ BUILD = build
 NAME = wasmachine
 DEPS = $(SRC)/dividerp1.v $(SRC)/genrom.v $(SRC)/$(NAME).v
 
-IVERILOG = iverilog -I $(SRC) -y $(SRC)
+IVERILOG = iverilog -I $(SRC) -y $(SRC) -y vendor/LEB128
 VVP      = vvp -N
 
 
@@ -14,7 +14,7 @@ all: test $(NAME).bin
 #
 # General test objectives
 #
-test       : test/stack test/genrom
+test       : test/stack test/genrom test/cpu
 test/genrom: $(BUILD)/genrom_tb.vcd
 test/stack : $(BUILD)/stack_tb.vcd
 test/%     : $(BUILD)/%_tb.vcd
@@ -30,10 +30,23 @@ view/%: test/%
 	gtkwave $(BUILD)/$(@F)_tb.vcd test/$(@F)_tb.gtkw
 
 
+# cpu
+test/cpu: test/cpu/i64.const
+test/cpu/i64.const: $(BUILD)/cpu/i64.const_tb.vcd
 
+$(BUILD)/cpu/%_tb.vcd: $(BUILD)/cpu/%_tb $(BUILD)/cpu/%.hex
+	(cd $(BUILD)/cpu && $(VVP) ../../$<) || (rm $< && exit 1)
 
+$(BUILD)/cpu/%.hex:
+	mkdir -p $(@D)
+	cp test/cpu/$(@F) $(BUILD)/cpu
 
+$(BUILD)/cpu/%_tb: $(SRC)/cpu.v test/assert.vh test/cpu/%_tb.v
+	mkdir -p $(@D)
+	$(IVERILOG) -I test test/cpu/$(@F).v -o $@
 
+view/cpu/%: test/cpu/%
+	gtkwave $(BUILD)/cpu/$(@F)_tb.vcd test/cpu/cpu_tb.gtkw
 
 
 # genrom
