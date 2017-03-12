@@ -19,7 +19,7 @@ module genrom #(     // Parameters
   input                         clk,     // Global clock signal
   input  wire [AW-1:0]          addr,    // Address
   input  wire [EXTRA-1:0]       extra,   // Length of data to be fetch
-  output logic[EXTRA**2*DW-1:0] data=0,  // Output data
+  output logic[2**EXTRA*DW-1:0] data=0,  // Output data
   output logic                  error    // none / extra out of limits
 );
 
