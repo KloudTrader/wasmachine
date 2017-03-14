@@ -1,5 +1,7 @@
 `include "assert.vh"
 
+`include "stack.vh"
+
 
 module Stack_tb();
 
@@ -32,56 +34,56 @@ module Stack_tb();
     $dumpvars(0, Stack_tb);
 
     // `status` is `empty` by default
-    `assert(status, 2'b01);
+    `assert(status, `EMPTY);
 
     // Underflow
-    op <= 2;
+    op <= `POP;
     #2
-    `assert(status, 2'b10);
+    `assert(status, `UNDERFLOW);
 
     // Push
-    op   <= 1;
+    op   <= `PUSH;
     data <= 1;
     #2
+    `assert(status, `NONE);
     `assert(tos   , 8'h01);
-    `assert(status, 2'b00);
 
     // Top of Stack
-    op <= 0;
+    op <= `NONE;
     #2
     `assert(tos   , 8'h01);
-    `assert(status, 2'b00);
+    `assert(status, `NONE);
 
     // Overflow
-    op <= 1;
+    op   <= `PUSH;
     #2
     `assert(tos   , 8'h01);
-    `assert(status, 2'b11);
+    `assert(status, `OVERFLOW);
 
     // Pop
-    op <= 2;
+    op <= `POP;
     #2
     // `assert(tos   , 8'h01);
-    `assert(status, 2'b01);
+    `assert(status, `NONE);
 
     // Push & replace
-    op   <= 1;
     data <= 2;
+    op   <= `PUSH;
     #2
     `assert(tos   , 8'h02);
-    `assert(status, 2'b00);
+    `assert(status, `NONE);
 
-    op   <= 3;
     data <= 3;
+    op   <= `REPLACE;
     #2
     `assert(tos   , 8'h03);
-    `assert(status, 2'b00);
+    `assert(status, `NONE);
 
     // Reset
     reset <= 1;
     #2
     // `assert(tos   , 8'h03);
-    `assert(status, 2'b01);
+    `assert(status, `EMPTY);
 
     $display("ok");
     $finish;
