@@ -1,6 +1,7 @@
 `default_nettype none
 
 `include "opcodes.vh"
+`include "stack.vh"
 
 
 `define i32 2'b00
@@ -97,7 +98,7 @@ module cpu
     end
 
     else if(!trap) begin
-      stack_op <= 0;
+      stack_op <= `NONE;
 
       case (step)
         FETCH: begin
@@ -131,7 +132,7 @@ module cpu
 
               `op_end: begin
                 result <= stack_tos[63:0];
-                result_empty <= stack_status == 2'b01;
+                result_empty <= stack_status == `EMPTY;
 
                 step <= FETCH;
               end
@@ -202,7 +203,7 @@ module cpu
               end
 
               `op_f32_const: begin
-                stack_op <= 1;
+                stack_op <= `PUSH;
                 stack_data <= {`f32, rom_data};
 
                 PC   <= PC+4;
@@ -210,7 +211,7 @@ module cpu
               end
 
               `op_f64_const: begin
-                stack_op <= 1;
+                stack_op <= `PUSH;
                 stack_data <= {`f64, rom_data};
 
                 PC   <= PC+8;
@@ -223,14 +224,14 @@ module cpu
           case (opcode)
             // Constants
             `op_i32_const: begin
-              stack_op <= 1;
+              stack_op <= `PUSH;
               stack_data <= {`i32, leb128_out};
 
               PC <= PC+leb128_len;
             end
 
             `op_i64_const: begin
-              stack_op <= 1;
+              stack_op <= `PUSH;
               stack_data <= {`i64, leb128_out};
 
               PC <= PC+leb128_len;
