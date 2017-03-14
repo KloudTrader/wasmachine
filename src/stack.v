@@ -25,11 +25,10 @@ module stack
   output reg [1:0]       status = `EMPTY  // none / empty / underflow / overflow
 );
 
+  localparam MAX_STACK = 1 << (DEPTH+1) - 1;
 
-  localparam MAX_STACK = 1 << DEPTH;
-
-  reg [WIDTH - 1:0] stack [0:MAX_STACK - 1];
-  reg [DEPTH - 1:0] index = 0;
+  reg [WIDTH-1:0] stack [0:MAX_STACK];
+  reg [  DEPTH:0] index = 0;
 
   always @(posedge clk) begin
     if (reset) begin
@@ -41,7 +40,7 @@ module stack
       case(op)
         `PUSH:
         begin
-          if (index == MAX_STACK)
+          if (index == MAX_STACK+1)  // HACK Do we really need the `+1`?
             status <= `OVERFLOW;
           else begin
             stack[index] <= data;
