@@ -57,10 +57,10 @@ module stack
           if (index == 0)
             status <= `UNDERFLOW;
           else begin
-            index <= index - 1;
+            index = index - 1;
 
-            tos <= stack[index - 1];
-            status <= (index == 1) ? `EMPTY : `NONE;
+            tos <= stack[index-1];  // HACK Should not have `-1`
+            status <= index ? `NONE : `EMPTY;
           end
         end
 
