@@ -31,7 +31,15 @@ view/%: test/%
 
 
 # cpu
-test/cpu: test/cpu/i64.const
+test/cpu: test/cpu/parametric_operators test/cpu/constants
+
+test/cpu/parametric_operators: test/cpu/drop test/cpu/select
+test/cpu/drop   : $(BUILD)/cpu/drop_tb.vcd
+test/cpu/select : test/cpu/select1 test/cpu/select2
+test/cpu/select1: $(BUILD)/cpu/select1_tb.vcd
+test/cpu/select2: $(BUILD)/cpu/select2_tb.vcd
+
+test/cpu/constants: test/cpu/i64.const
 test/cpu/i64.const: $(BUILD)/cpu/i64.const_tb.vcd
 
 $(BUILD)/cpu/%_tb.vcd: $(BUILD)/cpu/%_tb $(BUILD)/cpu/%.hex
