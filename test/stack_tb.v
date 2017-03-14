@@ -6,6 +6,7 @@
 module Stack_tb();
 
   parameter WIDTH = 8;
+  parameter DEPTH = 1;  // frames (exponential)
 
   reg                clk = 0;
   reg                reset;
@@ -16,7 +17,7 @@ module Stack_tb();
 
   stack #(
     .WIDTH(WIDTH),
-    .DEPTH(0)
+    .DEPTH(DEPTH)
   )
   dut(
     .clk(clk),
@@ -43,47 +44,76 @@ module Stack_tb();
 
     // Push
     op   <= `PUSH;
+    data <= 0;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h00);
+
+    op   <= `PUSH;
     data <= 1;
     #2
     `assert(status, `NONE);
     `assert(tos   , 8'h01);
 
+    op   <= `PUSH;
+    data <= 2;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h02);
+
     // Top of Stack
     op <= `NONE;
     #2
-    `assert(tos   , 8'h01);
     `assert(status, `NONE);
+    `assert(tos   , 8'h02);
 
     // Overflow
     op   <= `PUSH;
+    data <= 3;
     #2
-    `assert(tos   , 8'h01);
     `assert(status, `OVERFLOW);
+    `assert(tos   , 8'h02);
 
     // Pop
     op <= `POP;
     #2
-    // `assert(tos   , 8'h01);
     `assert(status, `NONE);
+    `assert(tos   , 8'h01);
 
-    // Push & replace
-    data <= 2;
-    op   <= `PUSH;
+    op <= `POP;
     #2
-    `assert(tos   , 8'h02);
     `assert(status, `NONE);
+    `assert(tos   , 8'h00);
 
-    data <= 3;
+    op <= `POP;
+    #2
+    `assert(status, `EMPTY);
+//    `assert(tos   , 8'h00);
+
+    // Replace
     op   <= `REPLACE;
+    data <= 4;
     #2
-    `assert(tos   , 8'h03);
+    `assert(status, `UNDERFLOW);
+//    `assert(tos   , 8'h00);
+
+    op   <= `PUSH;
+    data <= 5;
+    #2
     `assert(status, `NONE);
+    `assert(tos   , 8'h05);
+
+    op   <= `REPLACE;
+    data <= 6;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h06);
 
     // Reset
     reset <= 1;
     #2
-    // `assert(tos   , 8'h03);
     `assert(status, `EMPTY);
+    `assert(tos   , 8'h06);
 
     $display("ok");
     $finish;
