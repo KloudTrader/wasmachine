@@ -74,11 +74,12 @@ module stack
         begin
           if (index == 0)
             status <= UNDERFLOW;
-          else
+          else begin
             stack[index] <= data;
 
             tos <= data;
             status <= NONE;
+          end
         end
       endcase
   end
