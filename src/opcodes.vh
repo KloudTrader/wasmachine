@@ -14,6 +14,8 @@
 // Call operators
 
 // Parametric operators
+`define op_drop   8'h1a
+`define op_select 8'h1b
 
 // Variable access
 

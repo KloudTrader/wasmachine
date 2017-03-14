@@ -137,6 +137,23 @@ module cpu
                 step <= FETCH;
               end
 
+              // Call operators
+
+              // Parametric operators
+              `op_drop: begin
+                stack_op <= `POP;
+
+                step <= FETCH;
+              end
+
+              `op_select: begin
+                // Store condition for checking and remove it from the stack
+                stack_aux <= stack_tos;
+                stack_op <= `POP;
+
+                step <= EXEC2;
+              end
+
               // Constants
               `op_i32_const: begin
                 rom_addr  <= PC;
@@ -175,6 +192,14 @@ module cpu
 
         EXEC2: begin
           step <= MEMORY;
+
+          case (opcode)
+            // Parametric operators
+            `op_select: begin
+              // Remove first operator from stack
+              stack_op <= `POP;
+            end
+          endcase
         end
 
         MEMORY: begin
@@ -182,6 +207,22 @@ module cpu
 
           else
             case (opcode)
+              // Parametric operators
+              `op_select: begin
+                // Second operator will be already on tos on the next cycle due
+                // to `EXEC2`, so there's no need to do anything
+
+                // Condition is true, replace second operator with first one (we
+                // have just got it, and at the same time it will be removed
+                // from the stack on the next cycle due to `EXEC2`)
+                if(stack_aux) begin
+                  stack_op <= `REPLACE;
+                  stack_data <= stack_tos;
+                end
+
+                step <= FETCH;
+              end
+
               // Constants
               `op_i32_const: begin
                 leb128_i0 <= rom_data[39:32]; leb128_i1 <= rom_data[31:24];
