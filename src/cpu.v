@@ -69,13 +69,13 @@ module cpu
 
   // LEB128 - decoder of `varintN` values
   reg [ 7:0] leb128_i0, leb128_i1, leb128_i2, leb128_i3, leb128_i4, leb128_i5,
-             leb128_i6, leb128_i7, leb128_i8;
+             leb128_i6, leb128_i7, leb128_i8, leb128_i9;
   wire[63:0] leb128_out;
   wire[ 3:0] leb128_len;
 
   unpack_i64 leb128(leb128_i0, leb128_i1, leb128_i2, leb128_i3, leb128_i4,
-                    leb128_i5, leb128_i6, leb128_i7, leb128_i8, leb128_out,
-                    leb128_len);
+                    leb128_i5, leb128_i6, leb128_i7, leb128_i8, leb128_i9,
+                    leb128_out, leb128_len);
 
   // CPU internal status
   localparam FETCH   = 3'b000;
@@ -169,7 +169,7 @@ module cpu
 
               `op_i64_const: begin
                 rom_addr  <= PC;
-                rom_extra <= 8;
+                rom_extra <= 9;
 
                 step <= EXEC2;
               end
@@ -226,16 +226,17 @@ module cpu
                 leb128_i2 <= rom_data[23:16]; leb128_i3 <= rom_data[15: 8];
                 leb128_i4 <= rom_data[ 7: 0];
                 leb128_i5 <= 0; leb128_i6 <= 0; leb128_i7 <= 0; leb128_i8 <= 0;
+                leb128_i9 <= 0;
 
                 step = MEMORY2;
               end
 
               `op_i64_const: begin
-                leb128_i0 <= rom_data[71:64]; leb128_i1 <= rom_data[63:56];
-                leb128_i2 <= rom_data[55:48]; leb128_i3 <= rom_data[47:40];
-                leb128_i4 <= rom_data[39:32]; leb128_i5 <= rom_data[31:24];
-                leb128_i6 <= rom_data[23:16]; leb128_i7 <= rom_data[15: 8];
-                leb128_i8 <= rom_data[ 7: 0];
+                leb128_i0 <= rom_data[79:72]; leb128_i1 <= rom_data[71:64];
+                leb128_i2 <= rom_data[63:56]; leb128_i3 <= rom_data[55:48];
+                leb128_i4 <= rom_data[47:40]; leb128_i5 <= rom_data[39:32];
+                leb128_i6 <= rom_data[31:24]; leb128_i7 <= rom_data[23:16];
+                leb128_i8 <= rom_data[15: 8]; leb128_i9 <= rom_data[ 7: 0];
 
                 step = MEMORY2;
               end

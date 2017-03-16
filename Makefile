@@ -11,6 +11,16 @@ VVP      = vvp -N
 all: test $(NAME).bin
 
 
+clean:
+	rm -rf *.bin *.txt *.blif $(BUILD) *~
+
+update-dependencies:
+	git submodule update --remote
+
+
+.PHONY: all clean update-dependencies
+
+
 #
 # General test objectives
 #
@@ -47,6 +57,7 @@ test/cpu/f64.const: $(BUILD)/cpu/f64.const_tb.vcd
 test/cpu/i32.const: $(BUILD)/cpu/i32.const_tb.vcd
 test/cpu/i64.const: $(BUILD)/cpu/i64.const_tb.vcd
 
+
 $(BUILD)/cpu/%_tb.vcd: $(BUILD)/cpu/%_tb $(BUILD)/cpu/%.hex
 	(cd $(BUILD)/cpu && $(VVP) ../../$<) || (rm $< && exit 1)
 
@@ -81,10 +92,3 @@ $(NAME).bin: resources/$(NAME).pcf $(DEPS) test/prog.list
 
 	#-- Generar binario final, listo para descargar en fgpa
 	icepack $(NAME).txt $(NAME).bin
-
-
-#-- Limpiar todo
-clean:
-	rm -rf *.bin *.txt *.blif $(BUILD) *~
-
-.PHONY: all clean
