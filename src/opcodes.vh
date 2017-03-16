@@ -36,3 +36,4 @@
 // Conversions
 
 // Reinterpretations
+`define op_i32_reinterpret_f32 8'hbc

@@ -1,20 +1,17 @@
-`default_nettype none
+`include "cpu.vh"
 
 `include "opcodes.vh"
 `include "stack.vh"
 
 
-`define i32 2'b00
-`define i64 2'b01
-`define f32 2'b10
-`define f64 2'b11
-
+`default_nettype none
 
 module cpu
 (
   input  wire        clk,
   input  wire        reset,
   output reg  [63:0] result,
+  output reg  [ 1:0] result_type,
   output reg         result_empty,
   output reg  [ 2:0] trap = 0
 );
@@ -137,6 +134,7 @@ module cpu
 
               `op_end: begin
                 result <= stack_tos[63:0];
+                result_type <= stack_tos[65:64];
                 result_empty <= stack_status == `EMPTY;
 
                 step <= FETCH;
@@ -199,6 +197,14 @@ module cpu
               `op_i64_eqz: begin
                 stack_op <= `REPLACE;
                 stack_data <= {`i64, stack_tos[63:0] ? 64'b0 : 64'b1};
+
+                step <= FETCH;
+              end
+
+              // Reinterpretations
+              `op_i32_reinterpret_f32: begin
+                stack_op <= `REPLACE;
+                stack_data <= {`f32, stack_tos[63:0]};
 
                 step <= FETCH;
               end
