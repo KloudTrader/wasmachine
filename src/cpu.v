@@ -122,10 +122,10 @@ module cpu
           if(rom_error) trap <= 2;
 
           else begin
-            opcode <= rom_data[7:0];
+            opcode = rom_data[7:0];
 
             // Operations
-            case (rom_data[7:0])
+            case (opcode)
               // Control flow operators
               `op_unreachable: begin
                 trap <= 3;
