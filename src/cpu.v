@@ -188,6 +188,14 @@ module cpu
                 step <= EXEC2;
               end
 
+              // Comparison operators
+              `op_i32_eqz: begin
+                stack_op <= `REPLACE;
+                stack_data <= {`i32, 32'b0, stack_tos[31:0] ? 32'b0 : 32'b1};
+
+                step <= FETCH;
+              end
+
               // Unknown opcode
               default:
                 trap <= 4;
