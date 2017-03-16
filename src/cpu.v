@@ -89,6 +89,8 @@ module cpu
   reg [ROM_ADDR-1:0] PC   = 0;
   reg [7:0]          opcode;
 
+  logic [STACK_WIDTH - 1:0] stack_aux1, stack_aux2;
+
   // Main loop
   always @(posedge clk) begin
     if(reset) begin
@@ -110,7 +112,10 @@ module cpu
         end
 
         FETCH2: begin
-          step <= EXEC;
+          if(stack_status > `EMPTY) trap <= 1;
+
+          else
+            step <= EXEC;
         end
 
         EXEC: begin
@@ -148,7 +153,7 @@ module cpu
 
               `op_select: begin
                 // Store condition for checking and remove it from the stack
-                stack_aux <= stack_tos;
+                stack_aux1 <= stack_tos;
                 stack_op <= `POP;
 
                 step <= EXEC2;
@@ -209,18 +214,10 @@ module cpu
             case (opcode)
               // Parametric operators
               `op_select: begin
-                // Second operator will be already on tos on the next cycle due
-                // to `EXEC2`, so there's no need to do anything
+                // Store second operator
+                stack_aux2 <= stack_tos;
 
-                // Condition is true, replace second operator with first one (we
-                // have just got it, and at the same time it will be removed
-                // from the stack on the next cycle due to `EXEC2`)
-                if(stack_aux) begin
-                  stack_op <= `REPLACE;
-                  stack_data <= stack_tos;
-                end
-
-                step <= FETCH;
+                step <= MEMORY2;
               end
 
               // Constants
@@ -263,6 +260,26 @@ module cpu
 
         MEMORY2: begin
           case (opcode)
+            // Parametric operators
+            `op_select: begin
+              // Validate both operators are of the same type
+              if(stack_aux2[65:64] != stack_tos[65:64])
+                trap <= 6;
+
+              else begin
+                // Condition is true, replace second operator with first one (we
+                // have just got it, and at the same time it will be removed
+                // from the stack on the next cycle due to `EXEC2`)
+                if(stack_aux1) begin
+                  stack_op <= `REPLACE;
+                  stack_data <= stack_aux2;
+                end
+
+                // Second operator is already on tos, so there's no need to do
+                // anything with it
+              end
+            end
+
             // Constants
             `op_i32_const: begin
               stack_op <= `PUSH;
