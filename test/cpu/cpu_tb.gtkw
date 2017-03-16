@@ -1,23 +1,26 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Tue Mar 14 21:51:08 2017
+[*] Thu Mar 16 15:30:13 2017
 [*]
-[dumpfile] "/home/piranna/Proyectos/wasmachine/build/cpu/drop_tb.vcd"
-[dumpfile_mtime] "Tue Mar 14 21:50:42 2017"
-[dumpfile_size] 5165
+[dumpfile] "/home/piranna/Proyectos/wasmachine/build/cpu/select1_tb.vcd"
+[dumpfile_mtime] "Thu Mar 16 13:46:16 2017"
+[dumpfile_size] 7767
 [savefile] "/home/piranna/Proyectos/wasmachine/test/cpu/cpu_tb.gtkw"
-[timestart] 3
+[timestart] 0
 [size] 1920 1032
 [pos] -1 -1
-*-2.108205 50 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-2.108205 8 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] cpu_tb.
 [treeopen] cpu_tb.dut.
 [sst_width] 225
-[signals_width] 206
+[signals_width] 423
 [sst_expanded] 1
 [sst_vpaned_height] 293
 @28
 cpu_tb.dut.clk
+@23
+cpu_tb.dut.PC[3:0]
+@28
 cpu_tb.dut.reset
 @200
 -
@@ -52,9 +55,6 @@ cpu_tb.dut.stack_tos[65:0]
 cpu_tb.dut.stack_status[1:0]
 @200
 -
-@22
-cpu_tb.dut.stack_aux[65:0]
-@200
 -
 @c00022
 cpu_tb.dut.leb128_i0[7:0]

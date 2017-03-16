@@ -40,7 +40,11 @@ test/cpu/select1: $(BUILD)/cpu/select1_tb.vcd
 test/cpu/select2: $(BUILD)/cpu/select2_tb.vcd
 test/cpu/select3: $(BUILD)/cpu/select3_tb.vcd
 
-test/cpu/constants: test/cpu/i64.const
+test/cpu/constants: test/cpu/f32.const test/cpu/f64.const test/cpu/i32.const \
+	                  test/cpu/i64.const
+test/cpu/f32.const: $(BUILD)/cpu/f32.const_tb.vcd
+test/cpu/f64.const: $(BUILD)/cpu/f64.const_tb.vcd
+test/cpu/i32.const: $(BUILD)/cpu/i32.const_tb.vcd
 test/cpu/i64.const: $(BUILD)/cpu/i64.const_tb.vcd
 
 $(BUILD)/cpu/%_tb.vcd: $(BUILD)/cpu/%_tb $(BUILD)/cpu/%.hex
