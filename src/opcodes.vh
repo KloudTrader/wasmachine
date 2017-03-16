@@ -28,6 +28,8 @@
 `define op_f64_const 8'h44
 
 // Comparison operators
+`define op_i32_eqz  8'h45
+`define op_i64_eqz  8'h50
 
 // Numeric operators
 

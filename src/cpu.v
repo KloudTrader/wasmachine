@@ -196,6 +196,13 @@ module cpu
                 step <= FETCH;
               end
 
+              `op_i64_eqz: begin
+                stack_op <= `REPLACE;
+                stack_data <= {`i64, stack_tos[63:0] ? 64'b0 : 64'b1};
+
+                step <= FETCH;
+              end
+
               // Unknown opcode
               default:
                 trap <= 4;

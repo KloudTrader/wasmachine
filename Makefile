@@ -58,10 +58,14 @@ test/cpu/f64.const: $(BUILD)/cpu/f64.const_tb.vcd
 test/cpu/i32.const: $(BUILD)/cpu/i32.const_tb.vcd
 test/cpu/i64.const: $(BUILD)/cpu/i64.const_tb.vcd
 
-test/cpu/comparison_operators: test/cpu/i32.eqz
+test/cpu/comparison_operators: test/cpu/i32.eqz test/cpu/i64.eqz
 test/cpu/i32.eqz : test/cpu/i32.eqz1 test/cpu/i32.eqz2
 test/cpu/i32.eqz1: $(BUILD)/cpu/i32.eqz1_tb.vcd
 test/cpu/i32.eqz2: $(BUILD)/cpu/i32.eqz2_tb.vcd
+test/cpu/i64.eqz : test/cpu/i64.eqz1 test/cpu/i64.eqz2
+test/cpu/i64.eqz1: $(BUILD)/cpu/i64.eqz1_tb.vcd
+test/cpu/i64.eqz2: $(BUILD)/cpu/i64.eqz2_tb.vcd
+
 
 $(BUILD)/cpu/%_tb.vcd: $(BUILD)/cpu/%_tb $(BUILD)/cpu/%.hex
 	(cd $(BUILD)/cpu && $(VVP) ../../$<) || (rm $< && exit 1)
