@@ -28,7 +28,7 @@ module cpu_tb();
     $dumpfile("i64.eqz2_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #26
+    #24
     `assert(result, 0);
     `assert(result_empty, 0);
 
