@@ -221,19 +221,15 @@ module cpu
         end
 
         EXEC3: begin
-          if(rom_error) trap <= 5;
+          step <= EXEC4;
 
-          else begin
-            step <= EXEC4;
-
-            case (opcode)
-              // Parametric operators
-              `op_select: begin
-                // Store second operator before gets removed from stack
-                stack_aux2 <= stack_tos;
-              end
-            endcase
-          end
+          case (opcode)
+            // Parametric operators
+            `op_select: begin
+              // Store second operator before gets removed from stack
+              stack_aux2 <= stack_tos;
+            end
+          endcase
         end
 
         EXEC4: begin
@@ -244,7 +240,7 @@ module cpu
             `op_select: begin
               // Validate both operators are of the same type
               if(stack_aux2[65:64] != stack_tos[65:64])
-                trap <= 6;
+                trap <= 5;
 
               else begin
                 // Condition is true, replace second operator with first one (we
