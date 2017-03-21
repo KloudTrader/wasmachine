@@ -42,7 +42,7 @@ view/%: test/%
 
 # cpu
 test/cpu: test/cpu/parametric_operators test/cpu/constants \
-					test/cpu/comparison_operators
+					test/cpu/comparison_operators test/cpu/reinterpretations
 
 test/cpu/parametric_operators: test/cpu/drop test/cpu/select
 test/cpu/drop   : $(BUILD)/cpu/drop_tb.vcd
