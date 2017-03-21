@@ -29,7 +29,11 @@
 
 // Comparison operators
 `define op_i32_eqz  8'h45
+`define op_i32_eq   8'h46
+`define op_i32_ne   8'h47
 `define op_i64_eqz  8'h50
+`define op_i64_eq   8'h51
+`define op_i64_ne   8'h52
 
 // Numeric operators
 

@@ -58,13 +58,27 @@ test/cpu/f64.const: $(BUILD)/cpu/f64.const_tb.vcd
 test/cpu/i32.const: $(BUILD)/cpu/i32.const_tb.vcd
 test/cpu/i64.const: $(BUILD)/cpu/i64.const_tb.vcd
 
-test/cpu/comparison_operators: test/cpu/i32.eqz test/cpu/i64.eqz
+test/cpu/comparison_operators: test/cpu/i32.eqz test/cpu/i32.eq \
+															 test/cpu/i32.ne test/cpu/i64.eqz \
+															 test/cpu/i64.eq test/cpu/i64.ne
 test/cpu/i32.eqz : test/cpu/i32.eqz1 test/cpu/i32.eqz2
 test/cpu/i32.eqz1: $(BUILD)/cpu/i32.eqz1_tb.vcd
 test/cpu/i32.eqz2: $(BUILD)/cpu/i32.eqz2_tb.vcd
+test/cpu/i32.eq : test/cpu/i32.eq1 test/cpu/i32.eq2
+test/cpu/i32.eq1: $(BUILD)/cpu/i32.eq1_tb.vcd
+test/cpu/i32.eq2: $(BUILD)/cpu/i32.eq2_tb.vcd
+test/cpu/i32.ne : test/cpu/i32.ne1 test/cpu/i32.ne2
+test/cpu/i32.ne1: $(BUILD)/cpu/i32.ne1_tb.vcd
+test/cpu/i32.ne2: $(BUILD)/cpu/i32.ne2_tb.vcd
 test/cpu/i64.eqz : test/cpu/i64.eqz1 test/cpu/i64.eqz2
 test/cpu/i64.eqz1: $(BUILD)/cpu/i64.eqz1_tb.vcd
 test/cpu/i64.eqz2: $(BUILD)/cpu/i64.eqz2_tb.vcd
+test/cpu/i64.eq : test/cpu/i64.eq1 test/cpu/i64.eq2
+test/cpu/i64.eq1: $(BUILD)/cpu/i64.eq1_tb.vcd
+test/cpu/i64.eq2: $(BUILD)/cpu/i64.eq2_tb.vcd
+test/cpu/i64.ne : test/cpu/i64.ne1 test/cpu/i64.ne2
+test/cpu/i64.ne1: $(BUILD)/cpu/i64.ne1_tb.vcd
+test/cpu/i64.ne2: $(BUILD)/cpu/i64.ne2_tb.vcd
 
 test/cpu/reinterpretations: test/cpu/i32.reinterpret-f32
 test/cpu/i32.reinterpret-f32: $(BUILD)/cpu/i32.reinterpret-f32_tb.vcd

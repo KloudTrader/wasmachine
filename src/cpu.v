@@ -188,6 +188,17 @@ module cpu
                 stack_data <= {`i32, 32'b0, stack_tos[31:0] ? 32'b0 : 32'b1};
               end
 
+              `op_i32_eq,
+              `op_i32_ne,
+              `op_i64_eq,
+              `op_i64_ne:
+              begin
+                stack_aux1 <= stack_tos;
+                stack_op <= `POP;
+
+                step <= EXEC2;
+              end
+
               `op_i64_eqz: begin
                 stack_op <= `REPLACE;
                 stack_data <= {`i64, stack_tos[63:0] ? 64'b0 : 64'b1};
@@ -221,13 +232,40 @@ module cpu
         end
 
         EXEC3: begin
-          step <= EXEC4;
+          step <= FETCH;
 
           case (opcode)
             // Parametric operators
             `op_select: begin
               // Store second operator before gets removed from stack
               stack_aux2 <= stack_tos;
+
+              step <= EXEC4;
+            end
+
+            // Comparison operators
+            `op_i32_eq:
+            begin
+              stack_op   <= `REPLACE;
+              stack_data <= {`i32, (stack_aux1[31:0] == stack_tos[31:0]) ? 64'b1 : 64'b0};
+            end
+
+            `op_i32_ne:
+            begin
+              stack_op   <= `REPLACE;
+              stack_data <= {`i32, (stack_aux1[31:0] != stack_tos[31:0]) ? 64'b1 : 64'b0};
+            end
+
+            `op_i64_eq:
+            begin
+              stack_op   <= `REPLACE;
+              stack_data <= {`i64, (stack_aux1[63:0] == stack_tos[63:0]) ? 64'b1 : 64'b0};
+            end
+
+            `op_i64_ne:
+            begin
+              stack_op   <= `REPLACE;
+              stack_data <= {`i64, (stack_aux1[63:0] != stack_tos[63:0]) ? 64'b1 : 64'b0};
             end
           endcase
         end
