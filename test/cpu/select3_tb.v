@@ -28,7 +28,7 @@ module cpu_tb();
     $dumpfile("select3_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #50
+    #36
     `assert(trap, 6);
 
     $display("ok");

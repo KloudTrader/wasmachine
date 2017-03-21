@@ -20,7 +20,7 @@ module genrom #(     // Parameters
   input  wire [AW-1:0]          addr,    // Address
   input  wire [EXTRA-1:0]       extra,   // Length of data to be fetch
   output logic[2**EXTRA*DW-1:0] data=0,  // Output data
-  output logic                  error    // none / extra out of limits
+  output logic                  error=0    // none / extra out of limits
 );
 
   // Parameter: name of the file with the ROM content
@@ -34,7 +34,7 @@ module genrom #(     // Parameters
 
   // Read the memory
   always @(posedge clk) begin
-    error <= addr + extra >= NPOS;
+//    error <= addr + extra >= NPOS;
 
     case (extra)
       0: data <=  rom[addr   ];

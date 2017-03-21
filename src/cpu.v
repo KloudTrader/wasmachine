@@ -102,7 +102,7 @@ module cpu
       case (step)
         FETCH: begin
           rom_addr  <= PC;
-          rom_extra <= 0;
+          rom_extra <= 10;
 
           PC <= PC+1;
           step <= FETCH2;
@@ -119,7 +119,7 @@ module cpu
           if(rom_error) trap <= 2;
 
           else begin
-            opcode = rom_data[7:0];
+            opcode = rom_data[87:80];
 
             // Operations
             case (opcode)
@@ -159,31 +159,39 @@ module cpu
 
               // Constants
               `op_i32_const: begin
-                rom_addr  <= PC;
-                rom_extra <= 4;
+                leb128_i0 <= rom_data[79:72]; leb128_i1 <= rom_data[71:64];
+                leb128_i2 <= rom_data[63:56]; leb128_i3 <= rom_data[55:48];
+                leb128_i4 <= rom_data[47:40];
+                leb128_i5 <= 0; leb128_i6 <= 0; leb128_i7 <= 0; leb128_i8 <= 0;
+                leb128_i9 <= 0;
 
                 step <= EXEC2;
               end
 
               `op_i64_const: begin
-                rom_addr  <= PC;
-                rom_extra <= 9;
+                leb128_i0 <= rom_data[79:72]; leb128_i1 <= rom_data[71:64];
+                leb128_i2 <= rom_data[63:56]; leb128_i3 <= rom_data[55:48];
+                leb128_i4 <= rom_data[47:40]; leb128_i5 <= rom_data[39:32];
+                leb128_i6 <= rom_data[31:24]; leb128_i7 <= rom_data[23:16];
+                leb128_i8 <= rom_data[15: 8]; leb128_i9 <= rom_data[ 7: 0];
 
                 step <= EXEC2;
               end
 
               `op_f32_const: begin
-                rom_addr  <= PC;
-                rom_extra <= 3;
+                stack_op <= `PUSH;
+                stack_data <= {`f32, 32'b0, rom_data[79:48]};
 
-                step <= EXEC2;
+                PC   <= PC+4;
+                step <= FETCH;
               end
 
               `op_f64_const: begin
-                rom_addr  <= PC;
-                rom_extra <= 7;
+                stack_op <= `PUSH;
+                stack_data <= {`f64, rom_data[79:16]};
 
-                step <= EXEC2;
+                PC   <= PC+8;
+                step <= FETCH;
               end
 
               // Comparison operators
@@ -225,6 +233,23 @@ module cpu
               // Remove first operator from stack
               stack_op <= `POP;
             end
+
+            // Constants
+            `op_i32_const: begin
+              stack_op <= `PUSH;
+              stack_data <= {`i32, leb128_out};
+
+              PC   <= PC+leb128_len;
+              step <= FETCH;
+            end
+
+            `op_i64_const: begin
+              stack_op <= `PUSH;
+              stack_data <= {`i64, leb128_out};
+
+              PC   <= PC+leb128_len;
+              step <= FETCH;
+            end
           endcase
         end
 
@@ -235,47 +260,10 @@ module cpu
             case (opcode)
               // Parametric operators
               `op_select: begin
-                // Store second operator
+                // Store second operator before gets removed from stack
                 stack_aux2 <= stack_tos;
 
                 step <= MEMORY2;
-              end
-
-              // Constants
-              `op_i32_const: begin
-                leb128_i0 <= rom_data[39:32]; leb128_i1 <= rom_data[31:24];
-                leb128_i2 <= rom_data[23:16]; leb128_i3 <= rom_data[15: 8];
-                leb128_i4 <= rom_data[ 7: 0];
-                leb128_i5 <= 0; leb128_i6 <= 0; leb128_i7 <= 0; leb128_i8 <= 0;
-                leb128_i9 <= 0;
-
-                step = MEMORY2;
-              end
-
-              `op_i64_const: begin
-                leb128_i0 <= rom_data[79:72]; leb128_i1 <= rom_data[71:64];
-                leb128_i2 <= rom_data[63:56]; leb128_i3 <= rom_data[55:48];
-                leb128_i4 <= rom_data[47:40]; leb128_i5 <= rom_data[39:32];
-                leb128_i6 <= rom_data[31:24]; leb128_i7 <= rom_data[23:16];
-                leb128_i8 <= rom_data[15: 8]; leb128_i9 <= rom_data[ 7: 0];
-
-                step = MEMORY2;
-              end
-
-              `op_f32_const: begin
-                stack_op <= `PUSH;
-                stack_data <= {`f32, rom_data};
-
-                PC   <= PC+4;
-                step <= FETCH;
-              end
-
-              `op_f64_const: begin
-                stack_op <= `PUSH;
-                stack_data <= {`f64, rom_data};
-
-                PC   <= PC+8;
-                step <= FETCH;
               end
             endcase
         end
@@ -300,21 +288,6 @@ module cpu
                 // Second operator is already on tos, so there's no need to do
                 // anything with it
               end
-            end
-
-            // Constants
-            `op_i32_const: begin
-              stack_op <= `PUSH;
-              stack_data <= {`i32, leb128_out};
-
-              PC <= PC+leb128_len;
-            end
-
-            `op_i64_const: begin
-              stack_op <= `PUSH;
-              stack_data <= {`i64, leb128_out};
-
-              PC <= PC+leb128_len;
             end
           endcase
 
