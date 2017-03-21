@@ -218,15 +218,14 @@ module cpu
         end
 
         EXEC2: begin
-          step <= FETCH;
+          step <= EXEC3;
 
           case (opcode)
             // Parametric operators
             `op_select: begin
-              // Remove first operator from stack
+              // Remove first operator from stack on next tick after condition
+              // gets removed
               stack_op <= `POP;
-
-              step <= EXEC3;
             end
           endcase
         end
@@ -237,7 +236,8 @@ module cpu
           case (opcode)
             // Parametric operators
             `op_select: begin
-              // Store second operator before gets removed from stack
+              // Store first operator before gets removed from stack and after
+              // condition has been already removed
               stack_aux2 <= stack_tos;
 
               step <= EXEC4;
