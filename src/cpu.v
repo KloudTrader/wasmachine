@@ -75,12 +75,12 @@ module cpu
                     leb128_out, leb128_len);
 
   // CPU internal status
-  localparam FETCH   = 3'b000;
-  localparam FETCH2  = 3'b001;
-  localparam EXEC    = 3'b010;
-  localparam EXEC2   = 3'b011;
-  localparam MEMORY  = 3'b100;
-  localparam MEMORY2 = 3'b101;
+  localparam FETCH  = 3'b000;
+  localparam FETCH2 = 3'b001;
+  localparam EXEC   = 3'b010;
+  localparam EXEC2  = 3'b011;
+  localparam EXEC3  = 3'b100;
+  localparam EXEC4  = 3'b101;
 
   reg [2:0]          step = FETCH;
   reg [ROM_ADDR-1:0] PC   = 0;
@@ -119,6 +119,8 @@ module cpu
           if(rom_error) trap <= 2;
 
           else begin
+            step <= FETCH;
+
             opcode = rom_data[87:80];
 
             // Operations
@@ -129,15 +131,12 @@ module cpu
               end
 
               `op_nop: begin
-                step <= FETCH;
               end
 
               `op_end: begin
                 result <= stack_tos[63:0];
                 result_type <= stack_tos[65:64];
                 result_empty <= stack_status == `EMPTY;
-
-                step <= FETCH;
               end
 
               // Call operators
@@ -145,8 +144,6 @@ module cpu
               // Parametric operators
               `op_drop: begin
                 stack_op <= `POP;
-
-                step <= FETCH;
               end
 
               `op_select: begin
@@ -182,39 +179,31 @@ module cpu
                 stack_op <= `PUSH;
                 stack_data <= {`f32, 32'b0, rom_data[79:48]};
 
-                PC   <= PC+4;
-                step <= FETCH;
+                PC <= PC+4;
               end
 
               `op_f64_const: begin
                 stack_op <= `PUSH;
                 stack_data <= {`f64, rom_data[79:16]};
 
-                PC   <= PC+8;
-                step <= FETCH;
+                PC <= PC+8;
               end
 
               // Comparison operators
               `op_i32_eqz: begin
                 stack_op <= `REPLACE;
                 stack_data <= {`i32, 32'b0, stack_tos[31:0] ? 32'b0 : 32'b1};
-
-                step <= FETCH;
               end
 
               `op_i64_eqz: begin
                 stack_op <= `REPLACE;
                 stack_data <= {`i64, stack_tos[63:0] ? 64'b0 : 64'b1};
-
-                step <= FETCH;
               end
 
               // Reinterpretations
               `op_i32_reinterpret_f32: begin
                 stack_op <= `REPLACE;
                 stack_data <= {`f32, stack_tos[63:0]};
-
-                step <= FETCH;
               end
 
               // Unknown opcode
@@ -225,13 +214,15 @@ module cpu
         end
 
         EXEC2: begin
-          step <= MEMORY;
+          step <= FETCH;
 
           case (opcode)
             // Parametric operators
             `op_select: begin
               // Remove first operator from stack
               stack_op <= `POP;
+
+              step <= EXEC3;
             end
 
             // Constants
@@ -239,36 +230,37 @@ module cpu
               stack_op <= `PUSH;
               stack_data <= {`i32, leb128_out};
 
-              PC   <= PC+leb128_len;
-              step <= FETCH;
+              PC <= PC+leb128_len;
             end
 
             `op_i64_const: begin
               stack_op <= `PUSH;
               stack_data <= {`i64, leb128_out};
 
-              PC   <= PC+leb128_len;
-              step <= FETCH;
+              PC <= PC+leb128_len;
             end
           endcase
         end
 
-        MEMORY: begin
+        EXEC3: begin
           if(rom_error) trap <= 5;
 
-          else
+          else begin
+            step <= EXEC4;
+
             case (opcode)
               // Parametric operators
               `op_select: begin
                 // Store second operator before gets removed from stack
                 stack_aux2 <= stack_tos;
-
-                step <= MEMORY2;
               end
             endcase
+          end
         end
 
-        MEMORY2: begin
+        EXEC4: begin
+          step <= FETCH;
+
           case (opcode)
             // Parametric operators
             `op_select: begin
@@ -290,8 +282,6 @@ module cpu
               end
             end
           endcase
-
-          step <= FETCH;
         end
       endcase
     end
