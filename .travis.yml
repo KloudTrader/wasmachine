@@ -1,0 +1,7 @@
+language: verilog
+addons:
+  apt:
+    packages:
+    - make
+    - iverilog
+script: make test

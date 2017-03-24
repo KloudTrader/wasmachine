@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/piranna/wasmachine.svg?branch=master)](https://travis-ci.org/piranna/wasmachine)
+
 # wasmachine
 Put WebAssembly in your washing machine
 
