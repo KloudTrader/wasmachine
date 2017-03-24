@@ -1,4 +1,5 @@
 language: verilog
+dist: trusty
 addons:
   apt:
     sources:
