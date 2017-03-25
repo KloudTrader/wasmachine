@@ -3,7 +3,7 @@
 `include "stack.vh"
 
 
-module Stack_tb();
+module SuperStack_tb();
 
   parameter WIDTH = 8;
   parameter DEPTH = 1;  // frames (exponential)
@@ -18,7 +18,7 @@ module Stack_tb();
   wire [WIDTH-1:0] tos;
   wire [1:0]       status;
 
-  stack #(
+  SuperStack #(
     .WIDTH(WIDTH),
     .DEPTH(DEPTH)
   )
@@ -35,8 +35,8 @@ module Stack_tb();
   always #1 clk = ~clk;
 
   initial begin
-    $dumpfile("stack_tb.vcd");
-    $dumpvars(0, Stack_tb);
+    $dumpfile("SuperStack_tb.vcd");
+    $dumpvars(0, SuperStack_tb);
 
     // `status` is `empty` by default
     `assert(status, `EMPTY);

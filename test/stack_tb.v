@@ -14,7 +14,6 @@ module Stack_tb();
   reg              reset;
   reg  [      1:0] op;
   reg  [WIDTH-1:0] data;
-  reg  [DEPTH  :0] underflow_limit=0;
   wire [WIDTH-1:0] tos;
   wire [1:0]       status;
 
@@ -27,7 +26,6 @@ module Stack_tb();
     .reset(reset),
     .op(op),
     .data(data),
-    .underflow_limit(underflow_limit),
     .tos(tos),
     .status(status)
   );
