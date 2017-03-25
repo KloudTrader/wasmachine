@@ -24,10 +24,11 @@ update-dependencies:
 #
 # General test objectives
 #
-test       : test/stack test/genrom test/cpu
-test/genrom: $(BUILD)/genrom_tb.vcd
-test/stack : $(BUILD)/stack_tb.vcd
-test/%     : $(BUILD)/%_tb.vcd
+test           : test/stack test/SuperStack test/genrom test/cpu
+test/genrom    : $(BUILD)/genrom_tb.vcd
+test/stack     : $(BUILD)/stack_tb.vcd
+test/SuperStack: $(BUILD)/SuperStack_tb.vcd
+test/%         : $(BUILD)/%_tb.vcd
 
 $(BUILD)/%_tb.vcd: $(BUILD)/%_tb
 	(cd $(BUILD) && $(VVP) ../$<) || (rm $< && exit 1)

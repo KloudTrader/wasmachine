@@ -92,14 +92,14 @@ module Stack_tb();
     op <= `POP;
     #2
     `assert(status, `EMPTY);
-    // `assert(tos   , 8'h00);
+//    `assert(tos   , 8'h00);
 
     // Replace
     op   <= `REPLACE;
     data <= 4;
     #2
     `assert(status, `UNDERFLOW);
-    // `assert(tos   , 8'h00);
+//    `assert(tos   , 8'h00);
 
     op   <= `PUSH;
     data <= 5;
@@ -119,6 +119,65 @@ module Stack_tb();
     reset <= 0;
     `assert(status, `EMPTY);
     `assert(tos   , 8'h06);
+
+    //
+    // Underflow limit
+    //
+
+    // Underflow after change limit
+    op              <= `NONE;
+    underflow_limit <= 2;
+    #2
+    `assert(status, `UNDERFLOW);
+    `assert(tos   , 8'h06);
+
+    // Push data while we are under the underflow limit
+    op   <= `PUSH;
+    data <= 7;
+    #2
+    `assert(status, `UNDERFLOW);
+    `assert(tos   , 8'h07);
+
+    // We push more data... and get an empty stack! Magic! :-P
+    op   <= `PUSH;
+    data <= 8;
+    #2
+    `assert(status, `EMPTY);
+    `assert(tos   , 8'h08);
+
+    // Reset with underflow limit set
+    op   <= `PUSH;
+    data <= 9;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h09);
+
+    reset <= 1;
+    #2
+    reset <= 0;
+    `assert(status, `EMPTY);
+    `assert(tos   , 8'h09);
+
+    // Get underflow error when underflow limit is not zero (data is protected)
+    op <= `POP;
+    #2
+    op <= `NONE;
+    `assert(status, `UNDERFLOW);
+    `assert(tos   , 8'h09);
+
+    // Reset underflow limit, and now we can access the data
+    underflow_limit <= 0;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h08);
+
+    // Get empty when index get zero
+    op <= `POP;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h07);
+    #2
+    `assert(status, `EMPTY);
 
     $display("ok");
     $finish;

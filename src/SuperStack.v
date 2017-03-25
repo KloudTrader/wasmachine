@@ -11,7 +11,7 @@
 
 `default_nettype none
 
-module stack
+module SuperStack
 #(
   parameter WIDTH = 8,  // bits
   parameter DEPTH = 8   // frames (exponential)
@@ -21,6 +21,7 @@ module stack
   input                  reset,
   input wire [      1:0] op,              // none / push / pop / replace
   input      [WIDTH-1:0] data,            // Data to be inserted on the stack
+  input      [DEPTH  :0] underflow_limit, // Depth of underflow error
   output reg [WIDTH-1:0] tos,             // What's currently on the Top of Stack
   output reg [      1:0] status = `EMPTY  // none / empty / underflow / overflow
 );
@@ -32,12 +33,25 @@ module stack
 
   always @(posedge clk) begin
     if (reset) begin
-      index  <= 0;
+      index  <= underflow_limit;
       status <= `EMPTY;
     end
 
     else
       case(op)
+        `NONE:
+        begin
+          // Adjust status when underflow limit has been changed
+          if(index < underflow_limit)
+            status <= `UNDERFLOW;
+          else if(index == underflow_limit)
+            status <= `EMPTY;
+          else begin
+            tos <= stack[index-1];
+            status <= `NONE;
+          end
+        end
+
         `PUSH:
         begin
           if (index == MAX_STACK+1)  // HACK Do we really need the `+1`?
@@ -45,16 +59,23 @@ module stack
           else begin
             stack[index] <= data;
 
-            index <= index + 1;
+            index = index + 1;
 
             tos <= data;
-            status <= `NONE;
+
+            // Adjust status when underflow limit has been changed
+            if(index < underflow_limit)
+              status <= `UNDERFLOW;
+            else if(index == underflow_limit)
+              status <= `EMPTY;
+            else
+              status <= `NONE;
           end
         end
 
         `POP:
         begin
-          if (index == 0)
+          if (index <= underflow_limit)
             status <= `UNDERFLOW;
           else begin
             index = index - 1;
@@ -66,7 +87,7 @@ module stack
 
         `REPLACE:
         begin
-          if (index == 0)
+          if (index <= underflow_limit)
             status <= `UNDERFLOW;
           else begin
             stack[index] <= data;
