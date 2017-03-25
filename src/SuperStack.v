@@ -90,7 +90,7 @@ module SuperStack
           if (index <= underflow_limit)
             status <= `UNDERFLOW;
           else begin
-            stack[index] <= data;
+            stack[index-1] <= data;
 
             tos <= data;
             status <= `NONE;

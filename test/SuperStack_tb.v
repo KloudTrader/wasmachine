@@ -113,6 +113,11 @@ module SuperStack_tb();
     `assert(status, `NONE);
     `assert(tos   , 8'h06);
 
+    op <= `NONE;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h06);
+
     // Reset
     reset <= 1;
     #2
