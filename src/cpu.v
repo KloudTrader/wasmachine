@@ -90,7 +90,7 @@ module cpu
   // Main loop
   always @(posedge clk) begin
     if(reset) begin
-      trap <= 0;
+      trap <= `NONE;
       step <= FETCH;
       PC   <= 0;
     end
@@ -108,14 +108,14 @@ module cpu
         end
 
         FETCH2: begin
-          if(stack_status > `EMPTY) trap <= 1;
+          if(stack_status > `EMPTY) trap <= `STACK_ERROR;
 
           else
             step <= EXEC;
         end
 
         EXEC: begin
-          if(rom_error) trap <= 2;
+          if(rom_error) trap <= `ROM_ERROR;
 
           else begin
             step <= FETCH;
@@ -126,7 +126,7 @@ module cpu
             case (opcode)
               // Control flow operators
               `op_unreachable: begin
-                trap <= 3;
+                trap <= `UNREACHABLE;
               end
 
               `op_nop: begin
@@ -180,13 +180,23 @@ module cpu
 
               // Comparison operators
               `op_i32_eqz: begin
-                stack_op <= `REPLACE;
-                stack_data <= {`i32, 32'b0, stack_tos[31:0] ? 32'b0 : 32'b1};
+                if(stack_tos[65:64] != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  stack_data <= {`i32, 32'b0, stack_tos[31:0] ? 32'b0 : 32'b1};
+                end
               end
 
               `op_i64_eqz: begin
-                stack_op <= `REPLACE;
-                stack_data <= {`i64, stack_tos[63:0] ? 64'b0 : 64'b1};
+                if(stack_tos[65:64] != `i64)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  stack_data <= {`i64, stack_tos[63:0] ? 64'b0 : 64'b1};
+                end
               end
 
               // Numeric operators
@@ -195,8 +205,13 @@ module cpu
 
               // Reinterpretations
               `op_i32_reinterpret_f32: begin
-                stack_op <= `REPLACE;
-                stack_data <= {`f32, stack_tos[63:0]};
+                if(stack_tos[65:64] != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  stack_data <= {`f32, stack_tos[63:0]};
+                end
               end
 
               // Binary and ternary operations
@@ -218,7 +233,7 @@ module cpu
 
               // Unknown opcode
               default:
-                trap <= 4;
+                trap <= `UNKOWN_OPCODE;
             endcase
           end
         end
@@ -252,51 +267,91 @@ module cpu
             // Comparison operators
             `op_i32_eq:
             begin
-              stack_op   <= `REPLACE;
-              stack_data <= {`i32, (stack_aux1[31:0] == stack_tos[31:0]) ? 64'b1 : 64'b0};
+              if(stack_aux1[65:64] != `i32 || stack_tos[65:64] != `i32)
+                trap <= `TYPE_MISMATCH;
+
+              else begin
+                stack_op   <= `REPLACE;
+                stack_data <= {`i32, (stack_aux1[31:0] == stack_tos[31:0]) ? 64'b1 : 64'b0};
+              end
             end
 
             `op_i32_ne:
             begin
-              stack_op   <= `REPLACE;
-              stack_data <= {`i32, (stack_aux1[31:0] != stack_tos[31:0]) ? 64'b1 : 64'b0};
+              if(stack_aux1[65:64] != `i32 || stack_tos[65:64] != `i32)
+                trap <= `TYPE_MISMATCH;
+
+              else begin
+                stack_op   <= `REPLACE;
+                stack_data <= {`i32, (stack_aux1[31:0] != stack_tos[31:0]) ? 64'b1 : 64'b0};
+              end
             end
 
             `op_i64_eq:
             begin
-              stack_op   <= `REPLACE;
-              stack_data <= {`i64, (stack_aux1[63:0] == stack_tos[63:0]) ? 64'b1 : 64'b0};
+              if(stack_aux1[65:64] != `i64 || stack_tos[65:64] != `i64)
+                trap <= `TYPE_MISMATCH;
+
+              else begin
+                stack_op   <= `REPLACE;
+                stack_data <= {`i64, (stack_aux1[63:0] == stack_tos[63:0]) ? 64'b1 : 64'b0};
+              end
             end
 
             `op_i64_ne:
             begin
-              stack_op   <= `REPLACE;
-              stack_data <= {`i64, (stack_aux1[63:0] != stack_tos[63:0]) ? 64'b1 : 64'b0};
+              if(stack_aux1[65:64] != `i64 || stack_tos[65:64] != `i64)
+                trap <= `TYPE_MISMATCH;
+
+              else begin
+                stack_op   <= `REPLACE;
+                stack_data <= {`i64, (stack_aux1[63:0] != stack_tos[63:0]) ? 64'b1 : 64'b0};
+              end
             end
 
             // Numeric operators
             `op_i32_add:
             begin
-              stack_op   <= `REPLACE;
-              stack_data <= {`i32, stack_aux1[31:0] + stack_tos[31:0]};
+              if(stack_aux1[65:64] != `i32 || stack_tos[65:64] != `i32)
+                trap <= `TYPE_MISMATCH;
+
+              else begin
+                stack_op   <= `REPLACE;
+                stack_data <= {`i32, stack_aux1[31:0] + stack_tos[31:0]};
+              end
             end
 
             `op_i32_sub:
             begin
-              stack_op   <= `REPLACE;
-              stack_data <= {`i32, stack_tos[31:0] - stack_aux1[31:0]};
+              if(stack_aux1[65:64] != `i32 || stack_tos[65:64] != `i32)
+                trap <= `TYPE_MISMATCH;
+
+              else begin
+                stack_op   <= `REPLACE;
+                stack_data <= {`i32, stack_tos[31:0] - stack_aux1[31:0]};
+              end
             end
 
             `op_i64_add:
             begin
-              stack_op   <= `REPLACE;
-              stack_data <= {`i64, stack_aux1[63:0] + stack_tos[63:0]};
+              if(stack_aux1[65:64] != `i64 || stack_tos[65:64] != `i64)
+                trap <= `TYPE_MISMATCH;
+
+              else begin
+                stack_op   <= `REPLACE;
+                stack_data <= {`i64, stack_aux1[63:0] + stack_tos[63:0]};
+              end
             end
 
             `op_i64_sub:
             begin
-              stack_op   <= `REPLACE;
-              stack_data <= {`i64, stack_tos[63:0] - stack_aux1[63:0]};
+              if(stack_aux1[65:64] != `i64 || stack_tos[65:64] != `i64)
+                trap <= `TYPE_MISMATCH;
+
+              else begin
+                stack_op   <= `REPLACE;
+                stack_data <= {`i64, stack_tos[63:0] - stack_aux1[63:0]};
+              end
             end
           endcase
         end
@@ -309,7 +364,7 @@ module cpu
             `op_select: begin
               // Validate both operators are of the same type
               if(stack_aux2[65:64] != stack_tos[65:64])
-                trap <= 5;
+                trap <= `TYPES_MISMATCH;
 
               else begin
                 // Condition is true, replace second operator with first one (we

@@ -1,5 +1,7 @@
 `include "assert.vh"
 
+`include "cpu.vh"
+
 
 module cpu_tb();
 
@@ -29,7 +31,7 @@ module cpu_tb();
     $dumpvars(0, cpu_tb);
 
     #30
-    `assert(trap, 6);
+    `assert(trap, `TYPES_MISMATCH);
 
     $display("ok");
     $finish;
