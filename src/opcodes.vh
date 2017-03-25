@@ -36,6 +36,10 @@
 `define op_i64_ne   8'h52
 
 // Numeric operators
+`define op_i32_add  8'h6a
+`define op_i32_sub  8'h6b
+`define op_i64_add  8'h7c
+`define op_i64_sub  8'h7d
 
 // Conversions
 

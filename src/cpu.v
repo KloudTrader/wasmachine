@@ -204,7 +204,11 @@ module cpu
               `op_i32_eq,
               `op_i32_ne,
               `op_i64_eq,
-              `op_i64_ne:
+              `op_i64_ne,
+              `op_i32_add,
+              `op_i32_sub,
+              `op_i64_add,
+              `op_i64_sub:
               begin
                 stack_aux1 <= stack_tos;
                 stack_op <= `POP;
@@ -268,6 +272,31 @@ module cpu
             begin
               stack_op   <= `REPLACE;
               stack_data <= {`i64, (stack_aux1[63:0] != stack_tos[63:0]) ? 64'b1 : 64'b0};
+            end
+
+            // Numeric operators
+            `op_i32_add:
+            begin
+              stack_op   <= `REPLACE;
+              stack_data <= {`i32, stack_aux1[31:0] + stack_tos[31:0]};
+            end
+
+            `op_i32_sub:
+            begin
+              stack_op   <= `REPLACE;
+              stack_data <= {`i32, stack_tos[31:0] - stack_aux1[31:0]};
+            end
+
+            `op_i64_add:
+            begin
+              stack_op   <= `REPLACE;
+              stack_data <= {`i64, stack_aux1[63:0] + stack_tos[63:0]};
+            end
+
+            `op_i64_sub:
+            begin
+              stack_op   <= `REPLACE;
+              stack_data <= {`i64, stack_tos[63:0] - stack_aux1[63:0]};
             end
           endcase
         end

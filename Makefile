@@ -43,7 +43,8 @@ view/%: test/%
 
 # cpu
 test/cpu: test/cpu/parametric_operators test/cpu/constants \
-					test/cpu/comparison_operators test/cpu/reinterpretations
+					test/cpu/comparison_operators test/cpu/numeric_operators \
+					test/cpu/reinterpretations
 
 test/cpu/parametric_operators: test/cpu/drop test/cpu/select
 test/cpu/drop   : $(BUILD)/cpu/drop_tb.vcd
@@ -80,6 +81,13 @@ test/cpu/i64.eq2: $(BUILD)/cpu/i64.eq2_tb.vcd
 test/cpu/i64.ne : test/cpu/i64.ne1 test/cpu/i64.ne2
 test/cpu/i64.ne1: $(BUILD)/cpu/i64.ne1_tb.vcd
 test/cpu/i64.ne2: $(BUILD)/cpu/i64.ne2_tb.vcd
+
+test/cpu/numeric_operators: test/cpu/i32.add test/cpu/i32.sub test/cpu/i64.add \
+														test/cpu/i64.sub
+test/cpu/i32.add: $(BUILD)/cpu/i32.add_tb.vcd
+test/cpu/i32.sub: $(BUILD)/cpu/i32.sub_tb.vcd
+test/cpu/i64.add: $(BUILD)/cpu/i64.add_tb.vcd
+test/cpu/i64.sub: $(BUILD)/cpu/i64.sub_tb.vcd
 
 test/cpu/reinterpretations: test/cpu/i32.reinterpret-f32
 test/cpu/i32.reinterpret-f32: $(BUILD)/cpu/i32.reinterpret-f32_tb.vcd
