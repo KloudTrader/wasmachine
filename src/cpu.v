@@ -38,6 +38,8 @@ module cpu
     .clk(clk),
     .addr(rom_addr),
     .extra(rom_extra),
+    .lower_bound(4'h0),
+    .upper_bound(4'hf),
     .data(rom_data),
     .error(rom_error)
   );

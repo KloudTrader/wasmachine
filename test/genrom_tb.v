@@ -10,6 +10,8 @@ module genrom_tb();
   reg                    clk = 0;
   logic[AW-1:0]          addr;
   logic[EXTRA-1:0]       extra;
+  logic[AW-1:0]          lower_bound=0;
+  logic[AW-1:0]          upper_bound=9;
   wire [EXTRA**2*DW-1:0] data;
   wire                   error;
 
@@ -22,6 +24,8 @@ module genrom_tb();
     .clk(clk),
     .addr(addr),
     .extra(extra),
+    .lower_bound(lower_bound),
+    .upper_bound(upper_bound),
     .data(data),
     .error(error)
   );
@@ -66,15 +70,15 @@ module genrom_tb();
     extra <= 15;
     #2
     `assert(error, 0);
-    `assert(data , 128'h81008200840088008140000000000000);
+    `assert(data , 128'h81008200840088008140xxxxxxxxxxxx);
 
-    addr  <= 15;
+    addr  <= 9;
     extra <= 0;
     #2
     `assert(error, 0);
 
-    addr  <= 15;
-    extra <= 1;
+    addr  <= 10;
+    extra <= 0;
     #2
     `assert(error, 1);
 
