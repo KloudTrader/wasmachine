@@ -179,7 +179,6 @@ module SuperStack_tb();
     #2
     `assert(status, `EMPTY);
 
-    $display("ok");
     $finish;
   end
 

@@ -82,7 +82,6 @@ module genrom_tb();
     #2
     `assert(error, 1);
 
-    $display("ok");
     $finish;
   end
 

@@ -7,6 +7,10 @@ DEPS = $(SRC)/dividerp1.v $(SRC)/genrom.v $(SRC)/$(NAME).v
 IVERILOG = iverilog -I $(SRC) -y $(SRC) -y vendor/LEB128
 VVP      = vvp -N
 
+RED=\033[0;31m
+GREEN=\033[0;32m
+NC=\033[0m
+
 
 all: test $(NAME).bin
 
@@ -20,6 +24,10 @@ update-dependencies:
 
 .PHONY: all clean update-dependencies
 
+ifndef VERBOSE
+.SILENT:
+endif
+
 
 #
 # General test objectives
@@ -31,11 +39,18 @@ test/SuperStack: $(BUILD)/SuperStack_tb.vcd
 test/%         : $(BUILD)/%_tb.vcd
 
 $(BUILD)/%_tb.vcd: $(BUILD)/%_tb
-	(cd $(BUILD) && $(VVP) ../$<) || (rm $< && exit 1)
+	(cd $(BUILD) && $(VVP) ../$< > /dev/null)
+	[ $$? -eq 0 ] && \
+		echo "$(GREEN)ok$(NC)"
+	# [ $$? -ne 0 ] && \
+	# 	echo "$(RED)FAIL$(NC)" && \
+	# 	rm $< && \
+	# 	exit 1
 
-$(BUILD)/%_tb: $(SRC)/%.v test/assert.vh test/%_tb.v
+$(BUILD)/%_tb: test/%_tb.v $(SRC)/%.v test/assert.vh
+	echo -n $<"... "
 	mkdir -p $(@D)
-	$(IVERILOG) -I test test/$(@F).v -o $@
+	$(IVERILOG) -I test $< -o $@
 
 view/%: test/%
 	gtkwave $(BUILD)/$(@F)_tb.vcd test/$(@F)_tb.gtkw
@@ -93,15 +108,18 @@ test/cpu/reinterpretations: test/cpu/i32.reinterpret-f32
 test/cpu/i32.reinterpret-f32: $(BUILD)/cpu/i32.reinterpret-f32_tb.vcd
 
 $(BUILD)/cpu/%_tb.vcd: $(BUILD)/cpu/%_tb $(BUILD)/cpu/%.hex
-	(cd $(BUILD)/cpu && $(VVP) ../../$<) || (rm $< && exit 1)
+	(cd $(BUILD)/cpu && $(VVP) ../../$< > /dev/null)
+	[ $$? -eq 0 ] && \
+		echo "$(GREEN)ok$(NC)"
 
 $(BUILD)/cpu/%.hex:
 	mkdir -p $(@D)
 	cp test/cpu/$(@F) $(BUILD)/cpu
 
-$(BUILD)/cpu/%_tb: $(SRC)/cpu.v test/assert.vh test/cpu/%_tb.v
+$(BUILD)/cpu/%_tb: test/cpu/%_tb.v $(SRC)/cpu.v test/assert.vh
+	echo -n $<"... "
 	mkdir -p $(@D)
-	$(IVERILOG) -I test test/cpu/$(@F).v -o $@
+	$(IVERILOG) -I test $< -o $@
 
 view/cpu/%: test/cpu/%
 	gtkwave $(BUILD)/cpu/$(@F)_tb.vcd test/cpu/cpu_tb.gtkw
@@ -110,7 +128,9 @@ view/cpu/%: test/cpu/%
 # genrom
 $(BUILD)/genrom_tb.vcd: $(BUILD)/genrom_tb
 	cp test/genrom.hex $(BUILD)
-	(cd $(BUILD) && $(VVP) ../$<) || (rm $< && exit 1)
+	(cd $(BUILD) && $(VVP) ../$< > /dev/null)
+	[ $$? -eq 0 ] && \
+		echo "$(GREEN)ok$(NC)"
 
 
 #------------------------------

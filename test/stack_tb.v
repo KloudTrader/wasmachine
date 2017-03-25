@@ -118,7 +118,6 @@ module Stack_tb();
     `assert(status, `EMPTY);
     `assert(tos   , 8'h06);
 
-    $display("ok");
     $finish;
   end
 

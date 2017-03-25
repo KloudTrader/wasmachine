@@ -33,7 +33,6 @@ module cpu_tb();
     #30
     `assert(trap, `TYPES_MISMATCH);
 
-    $display("ok");
     $finish;
   end
 
