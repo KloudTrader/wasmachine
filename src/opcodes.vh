@@ -12,6 +12,7 @@
 `define op_return      8'h0f
 
 // Call operators
+`define op_call          8'h10
 
 // Parametric operators
 `define op_drop   8'h1a

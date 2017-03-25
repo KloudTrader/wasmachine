@@ -7,18 +7,21 @@
 `default_nettype none
 
 module cpu
+#(
+  parameter ROM_ADDR = 4
+)
 (
-  input  wire        clk,
-  input  wire        reset,
-  output reg  [63:0] result,
-  output reg  [ 1:0] result_type,
-  output reg         result_empty,
-  output reg  [ 2:0] trap = 0
+  input  wire                clk,
+  input  wire                reset,
+  input  wire [ROM_ADDR-1:0] pc,
+  output reg  [        63:0] result,
+  output reg  [         1:0] result_type,
+  output reg                 result_empty,
+  output reg  [         2:0] trap = `NONE
 );
 
   // ROM
   parameter ROM_FILE = "prog.list";
-  parameter ROM_ADDR = 4;
 
   localparam ROM_WIDTH = 8;
   localparam ROM_EXTRA = 4;
@@ -94,7 +97,7 @@ module cpu
     if(reset) begin
       trap <= `NONE;
       step <= FETCH;
-      PC   <= 0;
+      PC   <= pc;
     end
 
     else if(!trap) begin
@@ -141,6 +144,12 @@ module cpu
               end
 
               // Call operators
+              `op_call: begin
+                rom_addr  <= leb128_out;  //1+leb128_out;
+                rom_extra <= 10;  // 5
+
+                step <= EXEC2;
+              end
 
               // Parametric operators
               `op_drop: begin
@@ -257,6 +266,11 @@ module cpu
           step <= FETCH;
 
           case (opcode)
+            // Call operators
+            `op_call: begin
+              PC <= leb128_out;
+            end
+
             // Parametric operators
             `op_select: begin
               // Store first operator before gets removed from stack and after

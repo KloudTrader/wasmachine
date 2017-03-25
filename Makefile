@@ -57,9 +57,12 @@ view/%: test/%
 
 
 # cpu
-test/cpu: test/cpu/parametric_operators test/cpu/constants \
-					test/cpu/comparison_operators test/cpu/numeric_operators \
-					test/cpu/reinterpretations
+test/cpu: test/cpu/call_operators test/cpu/parametric_operators \
+					test/cpu/constants test/cpu/comparison_operators \
+					test/cpu/numeric_operators test/cpu/reinterpretations
+
+test/cpu/call_operators: test/cpu/call
+test/cpu/call: $(BUILD)/cpu/call_tb.vcd
 
 test/cpu/parametric_operators: test/cpu/drop test/cpu/select
 test/cpu/drop   : $(BUILD)/cpu/drop_tb.vcd

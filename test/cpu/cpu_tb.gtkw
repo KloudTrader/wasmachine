@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Tue Mar 21 12:19:08 2017
+[*] Sat Mar 25 00:27:31 2017
 [*]
-[dumpfile] "/home/piranna/github/wasmachine/build/cpu/i32.reinterpret-f32_tb.vcd"
-[dumpfile_mtime] "Tue Mar 21 12:18:16 2017"
-[dumpfile_size] 5492
+[dumpfile] "/home/piranna/github/wasmachine/build/cpu/i32.add_tb.vcd"
+[dumpfile_mtime] "Sat Mar 25 00:24:31 2017"
+[dumpfile_size] 6050
 [savefile] "/home/piranna/github/wasmachine/test/cpu/cpu_tb.gtkw"
-[timestart] 0
+[timestart] 13
 [size] 1366 720
 [pos] -1 -1
-*-2.108205 5 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-2.108205 22 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] cpu_tb.
 [treeopen] cpu_tb.dut.
-[sst_width] 225
-[signals_width] 423
+[sst_width] 213
+[signals_width] 328
 [sst_expanded] 1
 [sst_vpaned_height] 293
 @28
@@ -31,13 +31,14 @@ cpu_tb.dut.opcode[7:0]
 @28
 cpu_tb.dut.trap[2:0]
 @200
--
+-result
 @22
 cpu_tb.result[63:0]
 @28
+cpu_tb.result_type[1:0]
 cpu_tb.result_empty
 @200
--
+-ROM
 @22
 cpu_tb.dut.rom_addr[3:0]
 cpu_tb.dut.rom_extra[3:0]
@@ -45,16 +46,21 @@ cpu_tb.dut.rom_data[127:0]
 @28
 cpu_tb.dut.rom_error
 @200
--
+-Stack
 @28
 cpu_tb.dut.stack_op[1:0]
 @22
 cpu_tb.dut.stack_data[65:0]
+@23
+cpu_tb.dut.stack.underflow_limit[8:0]
+@22
 cpu_tb.dut.stack_tos[65:0]
 @28
 cpu_tb.dut.stack_status[1:0]
+@22
+cpu_tb.dut.stack.index[8:0]
 @200
--
+-LEB128
 @22
 cpu_tb.dut.leb128_out[63:0]
 cpu_tb.dut.leb128_len[3:0]
