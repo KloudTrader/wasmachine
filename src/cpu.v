@@ -145,13 +145,9 @@ module cpu
                 stack_op <= `POP;
               end
 
-              `op_select: begin
-                // Store condition for checking and remove it from the stack
-                stack_aux1 <= stack_tos;
-                stack_op <= `POP;
+              // Variable access
 
-                step <= EXEC2;
-              end
+              // Memory-related operators
 
               // Constants
               `op_i32_const: begin
@@ -188,6 +184,23 @@ module cpu
                 stack_data <= {`i32, 32'b0, stack_tos[31:0] ? 32'b0 : 32'b1};
               end
 
+              `op_i64_eqz: begin
+                stack_op <= `REPLACE;
+                stack_data <= {`i64, stack_tos[63:0] ? 64'b0 : 64'b1};
+              end
+
+              // Numeric operators
+
+              // Conversions
+
+              // Reinterpretations
+              `op_i32_reinterpret_f32: begin
+                stack_op <= `REPLACE;
+                stack_data <= {`f32, stack_tos[63:0]};
+              end
+
+              // Binary and ternary operations
+              `op_select,
               `op_i32_eq,
               `op_i32_ne,
               `op_i64_eq,
@@ -197,17 +210,6 @@ module cpu
                 stack_op <= `POP;
 
                 step <= EXEC2;
-              end
-
-              `op_i64_eqz: begin
-                stack_op <= `REPLACE;
-                stack_data <= {`i64, stack_tos[63:0] ? 64'b0 : 64'b1};
-              end
-
-              // Reinterpretations
-              `op_i32_reinterpret_f32: begin
-                stack_op <= `REPLACE;
-                stack_data <= {`f32, stack_tos[63:0]};
               end
 
               // Unknown opcode
