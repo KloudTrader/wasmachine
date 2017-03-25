@@ -57,31 +57,20 @@ module Stack_tb();
     `assert(status, `NONE);
     `assert(tos   , 8'h01);
 
-    op   <= `PUSH;
-    data <= 2;
-    #2
-    `assert(status, `NONE);
-    `assert(tos   , 8'h02);
-
     // Top of Stack
     op <= `NONE;
     #2
     `assert(status, `NONE);
-    `assert(tos   , 8'h02);
+    `assert(tos   , 8'h01);
 
     // Overflow
     op   <= `PUSH;
     data <= 3;
     #2
     `assert(status, `OVERFLOW);
-    `assert(tos   , 8'h02);
-
-    // Pop
-    op <= `POP;
-    #2
-    `assert(status, `NONE);
     `assert(tos   , 8'h01);
 
+    // Pop
     op <= `POP;
     #2
     `assert(status, `NONE);
@@ -107,6 +96,11 @@ module Stack_tb();
 
     op   <= `REPLACE;
     data <= 6;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h06);
+
+    op <= `NONE;
     #2
     `assert(status, `NONE);
     `assert(tos   , 8'h06);

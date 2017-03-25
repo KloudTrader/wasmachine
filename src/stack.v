@@ -14,7 +14,7 @@
 module stack
 #(
   parameter WIDTH = 8,  // bits
-  parameter DEPTH = 8   // frames (exponential)
+  parameter DEPTH = 7   // frames (exponential)
 )
 (
   input                  clk,
@@ -27,7 +27,7 @@ module stack
 
   localparam MAX_STACK = 1 << (DEPTH+1) - 1;
 
-  reg [WIDTH-1:0] stack [0:MAX_STACK];
+  reg [WIDTH-1:0] stack [0:MAX_STACK-1];
   reg [  DEPTH:0] index = 0;
 
   always @(posedge clk) begin
@@ -40,7 +40,7 @@ module stack
       case(op)
         `PUSH:
         begin
-          if (index == MAX_STACK+1)  // HACK Do we really need the `+1`?
+          if (index == MAX_STACK)
             status <= `OVERFLOW;
           else begin
             stack[index] <= data;
@@ -69,7 +69,7 @@ module stack
           if (index == 0)
             status <= `UNDERFLOW;
           else begin
-            stack[index] <= data;
+            stack[index-1] <= data;
 
             tos <= data;
             status <= `NONE;
