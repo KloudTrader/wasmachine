@@ -59,31 +59,20 @@ module SuperStack_tb();
     `assert(status, `NONE);
     `assert(tos   , 8'h01);
 
-    op   <= `PUSH;
-    data <= 2;
-    #2
-    `assert(status, `NONE);
-    `assert(tos   , 8'h02);
-
     // Top of Stack
     op <= `NONE;
     #2
     `assert(status, `NONE);
-    `assert(tos   , 8'h02);
+    `assert(tos   , 8'h01);
 
     // Overflow
     op   <= `PUSH;
-    data <= 3;
+    data <= 2;
     #2
     `assert(status, `OVERFLOW);
-    `assert(tos   , 8'h02);
-
-    // Pop
-    op <= `POP;
-    #2
-    `assert(status, `NONE);
     `assert(tos   , 8'h01);
 
+    // Pop
     op <= `POP;
     #2
     `assert(status, `NONE);
@@ -92,14 +81,14 @@ module SuperStack_tb();
     op <= `POP;
     #2
     `assert(status, `EMPTY);
-//    `assert(tos   , 8'h00);
+    // `assert(tos   , 8'h00);
 
     // Replace
     op   <= `REPLACE;
     data <= 4;
     #2
     `assert(status, `UNDERFLOW);
-//    `assert(tos   , 8'h00);
+    // `assert(tos   , 8'h00);
 
     op   <= `PUSH;
     data <= 5;
@@ -131,19 +120,13 @@ module SuperStack_tb();
 
     // Underflow after change limit
     op              <= `NONE;
-    underflow_limit <= 2;
+    underflow_limit <= 1;
     #2
     `assert(status, `UNDERFLOW);
     `assert(tos   , 8'h06);
 
-    // Push data while we are under the underflow limit
-    op   <= `PUSH;
-    data <= 7;
-    #2
-    `assert(status, `UNDERFLOW);
-    `assert(tos   , 8'h07);
-
-    // We push more data... and get an empty stack! Magic! :-P
+    // Push data while we are under the underflow limit...
+    // and get an empty stack! Magic! :-P
     op   <= `PUSH;
     data <= 8;
     #2
@@ -178,9 +161,6 @@ module SuperStack_tb();
 
     // Get empty when index get zero
     op <= `POP;
-    #2
-    `assert(status, `NONE);
-    `assert(tos   , 8'h07);
     #2
     `assert(status, `EMPTY);
 

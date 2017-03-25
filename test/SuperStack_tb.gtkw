@@ -1,43 +1,40 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Thu Mar 23 22:46:58 2017
+[*] Sat Mar 25 18:07:20 2017
 [*]
-[dumpfile] "/home/piranna/github/wasmachine/build/stack_tb.vcd"
-[dumpfile_mtime] "Thu Mar 23 22:46:39 2017"
-[dumpfile_size] 775
-[savefile] "/home/piranna/github/wasmachine/test/stack_tb.gtkw"
+[dumpfile] "/home/piranna/github/wasmachine/build/SuperStack_tb.vcd"
+[dumpfile_mtime] "Sat Mar 25 18:04:41 2017"
+[dumpfile_size] 1719
+[savefile] "/home/piranna/github/wasmachine/test/SuperStack_tb.gtkw"
 [timestart] 0
 [size] 1366 720
 [pos] -1 -1
-*-1.155780 2 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] Stack_tb.
+*-3.329965 2 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] SuperStack_tb.
 [sst_width] 213
 [signals_width] 209
 [sst_expanded] 1
 [sst_vpaned_height] 293
 @28
-Stack_tb.dut.clk
+SuperStack_tb.clk
+SuperStack_tb.reset
 @200
 -
 @28
-Stack_tb.dut.reset
-@200
--
-@28
-Stack_tb.dut.op[1:0]
+SuperStack_tb.op[1:0]
 @22
-Stack_tb.dut.data[7:0]
-@29
-Stack_tb.underflow_limit[1:0]
+SuperStack_tb.data[7:0]
+@28
+SuperStack_tb.underflow_limit[1:0]
 @200
 -
 @22
-Stack_tb.dut.tos[7:0]
+SuperStack_tb.tos[7:0]
 @28
-Stack_tb.dut.status[1:0]
+SuperStack_tb.status[1:0]
 @200
 -
 @28
-Stack_tb.dut.index[1:0]
+SuperStack_tb.dut.index[1:0]
 [pattern_trace] 1
 [pattern_trace] 0
