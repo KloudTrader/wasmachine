@@ -23,7 +23,8 @@ module SuperStack
   input      [WIDTH-1:0] data,            // Data to be inserted on the stack
   input      [DEPTH  :0] underflow_limit, // Depth of underflow error
   output reg [WIDTH-1:0] tos,             // What's currently on the Top of Stack
-  output reg [      1:0] status = `EMPTY  // none / empty / underflow / overflow
+  output reg [      2:0] status = `EMPTY  // none / empty / full / underflow /
+                                          // overflow
 );
 
   localparam MAX_STACK = 1 << (DEPTH+1) - 1;
@@ -48,7 +49,7 @@ module SuperStack
             status <= `EMPTY;
           else begin
             tos <= stack[index-1];
-            status <= `NONE;
+            status <= index == MAX_STACK ? `FULL : `NONE;
           end
         end
 
@@ -64,10 +65,12 @@ module SuperStack
             tos <= data;
 
             // Adjust status when underflow limit has been changed
-            if(index < underflow_limit)
-              status <= `UNDERFLOW;
+            if(index == MAX_STACK)
+              status <= `FULL;
             else if(index == underflow_limit)
               status <= `EMPTY;
+            else if(index < underflow_limit)
+              status <= `UNDERFLOW;
             else
               status <= `NONE;
           end
@@ -93,7 +96,7 @@ module SuperStack
             stack[index-1] <= data;
 
             tos <= data;
-            status <= `NONE;
+            status <= index == MAX_STACK ? `FULL : `NONE;
           end
         end
       endcase

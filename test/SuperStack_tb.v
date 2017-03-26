@@ -16,7 +16,7 @@ module SuperStack_tb();
   reg  [WIDTH-1:0] data;
   reg  [DEPTH  :0] underflow_limit=0;
   wire [WIDTH-1:0] tos;
-  wire [1:0]       status;
+  wire [      2:0] status;
 
   SuperStack #(
     .WIDTH(WIDTH),
@@ -56,13 +56,13 @@ module SuperStack_tb();
     op   <= `PUSH;
     data <= 1;
     #2
-    `assert(status, `NONE);
+    `assert(status, `FULL);
     `assert(tos   , 8'h01);
 
     // Top of Stack
     op <= `NONE;
     #2
-    `assert(status, `NONE);
+    `assert(status, `FULL);
     `assert(tos   , 8'h01);
 
     // Overflow
@@ -137,7 +137,7 @@ module SuperStack_tb();
     op   <= `PUSH;
     data <= 9;
     #2
-    `assert(status, `NONE);
+    `assert(status, `FULL);
     `assert(tos   , 8'h09);
 
     reset <= 1;

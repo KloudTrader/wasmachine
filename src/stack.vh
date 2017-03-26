@@ -5,5 +5,6 @@
 `define REPLACE 3
 
 `define EMPTY     1
-`define UNDERFLOW 2
-`define OVERFLOW  3
+`define FULL      2
+`define UNDERFLOW 3
+`define OVERFLOW  4
