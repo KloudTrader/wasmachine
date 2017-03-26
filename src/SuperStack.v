@@ -19,22 +19,23 @@ module SuperStack
 (
   input                  clk,
   input                  reset,
-  input wire [      1:0] op,              // none / push / pop / replace
+  input wire [      2:0] op,              // none / push / pop / replace /
+                                          // underflow_reset / underflow_push
   input      [WIDTH-1:0] data,            // Data to be inserted on the stack
   input      [DEPTH  :0] underflow_limit, // Depth of underflow error
+  output reg [DEPTH  :0] index = 0,
   output reg [WIDTH-1:0] tos,             // What's currently on the Top of Stack
   output reg [      2:0] status = `EMPTY  // none / empty / full / underflow /
-                                          // overflow
+                                          // overflow / unknown_op
 );
 
   localparam MAX_STACK = 1 << (DEPTH+1) - 1;
 
   reg [WIDTH-1:0] stack [0:MAX_STACK-1];
-  reg [  DEPTH:0] index = 0;
 
   always @(posedge clk) begin
     if (reset) begin
-      index  <= underflow_limit;
+      index  <= 0;
       status <= `EMPTY;
     end
 
@@ -83,7 +84,7 @@ module SuperStack
           else begin
             index = index - 1;
 
-            tos <= stack[index-1];  // HACK Should not have `-1`
+            tos <= stack[index-1];
             status <= index == underflow_limit ? `EMPTY : `NONE;
           end
         end
@@ -99,6 +100,64 @@ module SuperStack
             status <= index == MAX_STACK ? `FULL : `NONE;
           end
         end
+
+        `UNDERFLOW_RESET:
+        begin
+          // New underflow_limit is greater than current index
+          if (index < underflow_limit)
+            status <= `UNDERFLOW;
+
+          // New underflow_limit is equal or lower than current index
+          else begin
+            index = underflow_limit;
+
+            status <= index == MAX_STACK ? `FULL : `EMPTY;
+          end
+        end
+
+        `UNDERFLOW_PUSH:
+        begin
+          // Underflow_limit is greater than current index
+          if (index < underflow_limit) begin
+            stack[index] <= data;
+
+            index = index + 1;
+
+            tos <= data;
+
+            // Adjust status when underflow limit has been changed
+            if(index == MAX_STACK)
+              status <= `FULL;
+            else if(index == underflow_limit)
+              status <= `EMPTY;
+            else
+              status <= `UNDERFLOW;
+          end
+
+          // Both index and underflow_limit are equal to MAX_STACK
+          else if (underflow_limit == MAX_STACK)
+            status <= `OVERFLOW;
+
+          // Underflow_limit is equal or lower than current index
+          else begin
+            stack[underflow_limit] <= data;
+
+            index = underflow_limit+1;
+
+            tos <= data;
+
+            // Adjust status when underflow limit has been changed
+            if(index == MAX_STACK)
+              status <= `FULL;
+            else if(index == underflow_limit)
+              status <= `EMPTY;
+            else
+              status <= `NONE;
+          end
+        end
+
+        default:
+          status <= `UNKOWN_OP;
       endcase
   end
 
