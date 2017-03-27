@@ -6,7 +6,7 @@
  * Based on https://github.com/whitequark/bfcpu2/blob/master/verilog/Stack.v
  */
 
-`include "stack.vh"
+`include "SuperStack.vh"
 
 
 `default_nettype none
@@ -20,11 +20,13 @@ module SuperStack
   input                  clk,
   input                  reset,
   input wire [      2:0] op,              // none / push / pop / replace /
-                                          // underflow_reset / underflow_push
+                                          // underflow_reset / underflow_push /
+                                          // underflow_get / underflow_set
   input      [WIDTH-1:0] data,            // Data to be inserted on the stack
+  input      [DEPTH  :0] offset,          // position of getter/setter
   input      [DEPTH  :0] underflow_limit, // Depth of underflow error
-  output reg [DEPTH  :0] index = 0,
-  output reg [WIDTH-1:0] tos,             // What's currently on the Top of Stack
+  output reg [DEPTH  :0] index = 0,       // Current top of stack position
+  output reg [WIDTH-1:0] out,             // top of stack, or output of getter
   output reg [      2:0] status = `EMPTY  // none / empty / full / underflow /
                                           // overflow / unknown_op
 );
@@ -49,7 +51,7 @@ module SuperStack
           else if(index == underflow_limit)
             status <= `EMPTY;
           else begin
-            tos <= stack[index-1];
+            out <= stack[index-1];
             status <= index == MAX_STACK ? `FULL : `NONE;
           end
         end
@@ -63,7 +65,7 @@ module SuperStack
 
             index = index + 1;
 
-            tos <= data;
+            out <= data;
 
             // Adjust status when underflow limit has been changed
             if(index == MAX_STACK)
@@ -84,7 +86,7 @@ module SuperStack
           else begin
             index = index - 1;
 
-            tos <= stack[index-1];
+            out <= stack[index-1];
             status <= index == underflow_limit ? `EMPTY : `NONE;
           end
         end
@@ -96,7 +98,7 @@ module SuperStack
           else begin
             stack[index-1] <= data;
 
-            tos <= data;
+            out <= data;
             status <= index == MAX_STACK ? `FULL : `NONE;
           end
         end
@@ -115,7 +117,7 @@ module SuperStack
           end
         end
 
-        `UNDERFLOW_PUSH:
+        `UNDERFLOW_RESET_PUSH:
         begin
           // Underflow_limit is greater than current index
           if (index < underflow_limit) begin
@@ -123,7 +125,7 @@ module SuperStack
 
             index = index + 1;
 
-            tos <= data;
+            out <= data;
 
             // Adjust status when underflow limit has been changed
             if(index == MAX_STACK)
@@ -144,7 +146,7 @@ module SuperStack
 
             index = underflow_limit+1;
 
-            tos <= data;
+            out <= data;
 
             // Adjust status when underflow limit has been changed
             if(index == MAX_STACK)
@@ -156,8 +158,35 @@ module SuperStack
           end
         end
 
-        default:
-          status <= `UNKOWN_OP;
+        `UNDERFLOW_GET:
+        begin
+          if (index <= offset)
+            status <= `BAD_OFFSET;
+
+          else begin
+            out <= stack[offset];
+            status <= `NONE;
+          end
+        end
+
+        `UNDERFLOW_SET:
+        begin
+          if (index <= offset)
+            status <= `BAD_OFFSET;
+
+          else begin
+            stack[offset] <= data;
+
+            if(offset < index-1)
+              status <= `NONE;
+
+            // Update out if we are modifying ToS
+            else begin
+              out <= data;
+              status <= index == MAX_STACK ? `FULL : `NONE;
+            end
+          end
+        end
       endcase
   end
 
