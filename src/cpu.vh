@@ -8,6 +8,7 @@
 `define STACK_ERROR    1
 `define ROM_ERROR      2
 `define UNREACHABLE    3
-`define TYPE_MISMATCH  4
-`define UNKOWN_OPCODE  5
-`define TYPES_MISMATCH 6
+`define ENDED          4
+`define TYPE_MISMATCH  5
+`define UNKOWN_OPCODE  6
+`define TYPES_MISMATCH 7

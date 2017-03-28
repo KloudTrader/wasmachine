@@ -62,7 +62,9 @@ test/cpu: test/cpu/call_operators test/cpu/parametric_operators \
 					test/cpu/numeric_operators test/cpu/reinterpretations
 
 test/cpu/call_operators: test/cpu/call
-test/cpu/call: $(BUILD)/cpu/call_tb.vcd
+test/cpu/call : test/cpu/call1 test/cpu/call2
+test/cpu/call1: $(BUILD)/cpu/call1_tb.vcd
+test/cpu/call2: $(BUILD)/cpu/call2_tb.vcd
 
 test/cpu/parametric_operators: test/cpu/drop test/cpu/select
 test/cpu/drop   : $(BUILD)/cpu/drop_tb.vcd

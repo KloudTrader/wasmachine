@@ -16,7 +16,7 @@ module cpu_tb();
   wire [         2:0] trap;
 
   cpu #(
-    .ROM_FILE("call.hex"),
+    .ROM_FILE("call1.hex"),
     .ROM_ADDR(ROM_ADDR)
   )
   dut
@@ -33,13 +33,13 @@ module cpu_tb();
   always #1 clk = ~clk;
 
   initial begin
-    $dumpfile("call_tb.vcd");
+    $dumpfile("call1_tb.vcd");
     $dumpvars(0, cpu_tb);
 
     #1
     reset <= 0;
 
-    #23
+    #32
     `assert(result, 42);
     `assert(result_type, `i64);
     `assert(result_empty, 0);

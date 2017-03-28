@@ -1,17 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Sat Mar 25 00:27:31 2017
+[*] Tue Mar 28 08:45:44 2017
 [*]
-[dumpfile] "/home/piranna/github/wasmachine/build/cpu/i32.add_tb.vcd"
-[dumpfile_mtime] "Sat Mar 25 00:24:31 2017"
-[dumpfile_size] 6050
+[dumpfile] "/home/piranna/github/wasmachine/build/cpu/call2_tb.vcd"
+[dumpfile_mtime] "Tue Mar 28 08:43:12 2017"
+[dumpfile_size] 8821
 [savefile] "/home/piranna/github/wasmachine/test/cpu/cpu_tb.gtkw"
-[timestart] 13
+[timestart] 5
 [size] 1366 720
 [pos] -1 -1
-*-2.108205 22 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-3.043943 35 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] cpu_tb.
 [treeopen] cpu_tb.dut.
+[treeopen] cpu_tb.dut.leb128.
 [sst_width] 213
 [signals_width] 328
 [sst_expanded] 1
@@ -48,17 +49,24 @@ cpu_tb.dut.rom_error
 @200
 -Stack
 @28
-cpu_tb.dut.stack_op[1:0]
+cpu_tb.dut.stack_op[2:0]
 @22
 cpu_tb.dut.stack_data[65:0]
-@23
-cpu_tb.dut.stack.underflow_limit[8:0]
-@22
-cpu_tb.dut.stack_tos[65:0]
+cpu_tb.dut.underflow_limit[7:0]
+cpu_tb.dut.stack_index[7:0]
+cpu_tb.dut.stack_out[65:0]
 @28
-cpu_tb.dut.stack_status[1:0]
+cpu_tb.dut.stack_status[2:0]
+@200
+-Call stack
+@28
+cpu_tb.dut.call_stack_op[1:0]
 @22
-cpu_tb.dut.stack.index[8:0]
+cpu_tb.dut.call_stack_data[47:0]
+@23
+cpu_tb.dut.call_stack_out[47:0]
+@28
+cpu_tb.dut.call_stack_status[1:0]
 @200
 -LEB128
 @22
