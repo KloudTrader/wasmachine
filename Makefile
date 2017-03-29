@@ -57,9 +57,13 @@ view/%: test/%
 
 
 # cpu
-test/cpu: test/cpu/call_operators test/cpu/parametric_operators \
-					test/cpu/constants test/cpu/comparison_operators \
-					test/cpu/numeric_operators test/cpu/reinterpretations
+test/cpu: test/cpu/control_flow_operators test/cpu/call_operators \
+					test/cpu/parametric_operators test/cpu/constants \
+					test/cpu/comparison_operators test/cpu/numeric_operators \
+					test/cpu/reinterpretations
+
+test/cpu/control_flow_operators: test/cpu/return
+test/cpu/return: $(BUILD)/cpu/return_tb.vcd
 
 test/cpu/call_operators: test/cpu/call
 test/cpu/call : test/cpu/call1 test/cpu/call2

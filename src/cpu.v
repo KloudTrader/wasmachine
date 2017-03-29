@@ -199,7 +199,10 @@ module cpu
               `op_end: begin
                 // TODO `end` can be used to close conditionals and code blocks
                 call_return();
+              end
 
+              `op_return: begin
+                call_return();
               end
 
               // Call operators
