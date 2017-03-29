@@ -119,6 +119,36 @@ module cpu
 
   logic [STACK_WIDTH - 1:0] stack_aux1, stack_aux2;
 
+  task call_return;
+    if(call_stack_status == `EMPTY) begin
+      result <= stack_out[63:0];
+      result_type <= stack_out[65:64];
+      result_empty <= stack_status == `EMPTY;
+
+      trap <= `ENDED;
+    end
+
+    // Returning from a function call
+    else begin
+      PC              <= call_stack_out[32+2*(1+STACK_DEPTH)-1:  2*(1+STACK_DEPTH)];
+      underflow_limit <= call_stack_out[   2*(1+STACK_DEPTH)-1:1+      STACK_DEPTH];
+      stack_aux1      <= call_stack_out[           STACK_DEPTH:                  0];
+
+      call_stack_op <= `POP;
+
+      // TODO check we have just one result item
+      if(stack_status == `EMPTY)
+        stack_op <= `UNDERFLOW_RESET;
+
+      else begin
+        stack_op   <= `UNDERFLOW_RESET_PUSH;
+        stack_data <= stack_out;
+      end
+
+      step <= EXEC2;
+    end
+  endtask
+
   // Main loop
   always @(posedge clk) begin
     if(reset) begin
@@ -168,33 +198,8 @@ module cpu
 
               `op_end: begin
                 // TODO `end` can be used to close conditionals and code blocks
-                if(call_stack_status == `EMPTY) begin
-                  result <= stack_out[63:0];
-                  result_type <= stack_out[65:64];
-                  result_empty <= stack_status == `EMPTY;
+                call_return();
 
-                  trap <= `ENDED;
-                end
-
-                // Returning from a function call
-                else begin
-                  PC              <= call_stack_out[32+2*(1+STACK_DEPTH)-1:  2*(1+STACK_DEPTH)];
-                  underflow_limit <= call_stack_out[   2*(1+STACK_DEPTH)-1:1+      STACK_DEPTH];
-                  stack_aux1      <= call_stack_out[           STACK_DEPTH:                  0];
-
-                  call_stack_op <= `POP;
-
-                  // TODO check we have just one result item
-                  if(stack_status == `EMPTY)
-                    stack_op <= `UNDERFLOW_RESET;
-
-                  else begin
-                    stack_op   <= `UNDERFLOW_RESET_PUSH;
-                    stack_data <= stack_out;
-                  end
-
-                  step <= EXEC2;
-                end
               end
 
               // Call operators
