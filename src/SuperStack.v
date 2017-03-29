@@ -1,5 +1,5 @@
 /*
- * Stack
+ * SuperStack
  *
  * (c) 2017 - Jesús Leganés-Combarro 'piranna' <piranna@gmail.com>
  *
@@ -35,6 +35,18 @@ module SuperStack
 
   reg [WIDTH-1:0] stack [0:MAX_STACK-1];
 
+  // Adjust status when underflow limit has been changed
+  function [2:0] getStatus([DEPTH:0] index);
+    if(index == MAX_STACK)
+      getStatus = `FULL;
+    else if(index == underflow_limit)
+      getStatus = `EMPTY;
+    else if(index < underflow_limit)
+      getStatus = `UNDERFLOW;
+    else
+      getStatus = `NONE;
+  endfunction
+
   always @(posedge clk) begin
     if (reset) begin
       index  <= 0;
@@ -45,15 +57,8 @@ module SuperStack
       case(op)
         `NONE:
         begin
-          // Adjust status when underflow limit has been changed
-          if(index < underflow_limit)
-            status <= `UNDERFLOW;
-          else if(index == underflow_limit)
-            status <= `EMPTY;
-          else begin
-            out <= stack[index-1];
-            status <= index == MAX_STACK ? `FULL : `NONE;
-          end
+          out <= stack[index-1];
+          status <= getStatus(index);
         end
 
         `PUSH:
@@ -66,16 +71,7 @@ module SuperStack
             index = index + 1;
 
             out <= data;
-
-            // Adjust status when underflow limit has been changed
-            if(index == MAX_STACK)
-              status <= `FULL;
-            else if(index == underflow_limit)
-              status <= `EMPTY;
-            else if(index < underflow_limit)
-              status <= `UNDERFLOW;
-            else
-              status <= `NONE;
+            status <= getStatus(index);
           end
         end
 
@@ -87,7 +83,7 @@ module SuperStack
             index = index - 1;
 
             out <= stack[index-1];
-            status <= index == underflow_limit ? `EMPTY : `NONE;
+            status <= getStatus(index);
           end
         end
 
@@ -99,7 +95,7 @@ module SuperStack
             stack[index-1] <= data;
 
             out <= data;
-            status <= index == MAX_STACK ? `FULL : `NONE;
+            status <= getStatus(index);
           end
         end
 
@@ -113,7 +109,7 @@ module SuperStack
           else begin
             index = underflow_limit;
 
-            status <= index == MAX_STACK ? `FULL : `EMPTY;
+            status <= getStatus(index);
           end
         end
 
@@ -126,14 +122,7 @@ module SuperStack
             index = index + 1;
 
             out <= data;
-
-            // Adjust status when underflow limit has been changed
-            if(index == MAX_STACK)
-              status <= `FULL;
-            else if(index == underflow_limit)
-              status <= `EMPTY;
-            else
-              status <= `UNDERFLOW;
+            status <= getStatus(index);
           end
 
           // Both index and underflow_limit are equal to MAX_STACK
@@ -147,14 +136,7 @@ module SuperStack
             index = underflow_limit+1;
 
             out <= data;
-
-            // Adjust status when underflow limit has been changed
-            if(index == MAX_STACK)
-              status <= `FULL;
-            else if(index == underflow_limit)
-              status <= `EMPTY;
-            else
-              status <= `NONE;
+            status <= getStatus(index);
           end
         end
 
@@ -183,7 +165,7 @@ module SuperStack
             // Update out if we are modifying ToS
             else begin
               out <= data;
-              status <= index == MAX_STACK ? `FULL : `NONE;
+              status <= getStatus(index);
             end
           end
         end

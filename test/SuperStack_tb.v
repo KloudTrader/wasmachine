@@ -128,7 +128,7 @@ module SuperStack_tb();
     underflow_limit <= 1;
     #2
     `assert(status, `UNDERFLOW);
-    `assert(out   , 8'h06);
+    // `assert(out   , 8'h06);
     `assert(index , 0);
 
     // Push data while we are under the underflow limit...
