@@ -17,3 +17,14 @@ Currently it's in an initial state but is able to exec some basic commands.
 6. Replace usage of ROM for modules on RAM
 7. Accept call of functions from outside
 8. Use a pipelined design
+
+## External dependencies
+
+- [LEB128](https://github.com/piranna/LEB128)
+- [fpu](https://github.com/dawsonjon/fpu)
+
+They can be automatically upgraded executing
+
+```sh
+make update-dependencies
+```

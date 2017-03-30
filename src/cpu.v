@@ -105,6 +105,25 @@ module cpu
                     rom_data[31:24], rom_data[23:16], rom_data[15: 8],
                     rom_data[ 7: 0], leb128_out, leb128_len);
 
+  // Double to Float
+
+  wire        double_to_float_a_ack;
+  reg         double_to_float_a_stb;
+  wire [31:0] double_to_float_z;
+  wire        double_to_float_z_stb;
+  reg         double_to_float_z_ack;
+
+  double_to_float d2f(
+    .clk(clk),
+    .rst(reset),
+    .input_a_ack(double_to_float_a_ack),
+    .input_a(stack_out[63:0]),
+    .input_a_stb(double_to_float_a_stb),
+    .output_z(double_to_float_z),
+    .output_z_stb(double_to_float_z_stb),
+    .output_z_ack(double_to_float_z_ack)
+  );
+
   // CPU internal status
   localparam FETCH  = 3'b000;
   localparam FETCH2 = 3'b001;
@@ -284,6 +303,28 @@ module cpu
               // Numeric operators
 
               // Conversions
+              `op_f32_demote_f64: begin
+                double_to_float_a_stb <= 0;
+                double_to_float_z_ack <= 0;
+
+                if(stack_out[65:64] != `f64)
+                  trap <= `TYPE_MISMATCH;
+
+                else if(double_to_float_z_stb) begin
+                  stack_op   <= `REPLACE;
+                  stack_data <= {`f32, 32'b0, double_to_float_z};
+
+                  double_to_float_z_ack <= 1;
+                end
+
+                else begin
+                  if(double_to_float_a_ack)
+                    double_to_float_a_stb <= 1;
+
+                  // Wait at the same step until the FPU is ready
+                  step <= EXEC;
+                end
+              end
 
               // Reinterpretations
               `op_i32_reinterpret_f32: begin

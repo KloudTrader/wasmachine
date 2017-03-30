@@ -43,6 +43,7 @@
 `define op_i64_sub  8'h7d
 
 // Conversions
+`define op_f32_demote_f64  8'hb6
 
 // Reinterpretations
 `define op_i32_reinterpret_f32 8'hbc
