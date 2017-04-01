@@ -40,7 +40,8 @@ module Stack_tb();
     `assert(status, `EMPTY);
 
     // Underflow
-    op <= `POP;
+    op   <= `POP;
+    data <= 0;
     #2
     `assert(status, `UNDERFLOW);
 
@@ -71,12 +72,14 @@ module Stack_tb();
     `assert(tos   , 8'h01);
 
     // Pop
-    op <= `POP;
+    op   <= `POP;
+    data <= 0;
     #2
     `assert(status, `NONE);
     `assert(tos   , 8'h00);
 
-    op <= `POP;
+    op   <= `POP;
+    data <= 0;
     #2
     `assert(status, `EMPTY);
     // `assert(tos   , 8'h00);

@@ -77,10 +77,10 @@ module SuperStack
 
         `POP:
         begin
-          if (index <= underflow_limit)
+          if (index-data <= underflow_limit)
             status <= `UNDERFLOW;
           else begin
-            index = index - 1;
+            index = index - (1+data);
 
             out <= stack[index-1];
             status <= getStatus(index);

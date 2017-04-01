@@ -46,7 +46,8 @@ module SuperStack_tb();
     `assert(status, `EMPTY);
 
     // Underflow
-    op <= `POP;
+    op   <= `POP;
+    data <= 0;
     #2
     `assert(status, `UNDERFLOW);
 
@@ -77,12 +78,14 @@ module SuperStack_tb();
     `assert(out   , 8'h01);
 
     // Pop
-    op <= `POP;
+    op   <= `POP;
+    data <= 0;
     #2
     `assert(status, `NONE);
     `assert(out   , 8'h00);
 
-    op <= `POP;
+    op   <= `POP;
+    data <= 0;
     #2
     `assert(status, `EMPTY);
     // `assert(out   , 8'h00);
@@ -155,7 +158,8 @@ module SuperStack_tb();
     `assert(index , 1);
 
     // Get underflow error when underflow limit is not zero (data is protected)
-    op <= `POP;
+    op   <= `POP;
+    data <= 0;
     #2
     op <= `NONE;
     `assert(status, `UNDERFLOW);
@@ -170,7 +174,8 @@ module SuperStack_tb();
     `assert(index , 1);
 
     // Get empty when index get zero
-    op <= `POP;
+    op   <= `POP;
+    data <= 0;
     #2
     `assert(status, `EMPTY);
     `assert(index , 0);
