@@ -25,6 +25,7 @@ module SuperStack
   input      [WIDTH-1:0] data,            // Data to be inserted on the stack
   input      [DEPTH  :0] offset,          // position of getter/setter
   input      [DEPTH  :0] underflow_limit, // Depth of underflow error
+  input      [DEPTH  :0] new_index,       // New index
   output reg [DEPTH  :0] index = 0,       // Current top of stack position
   output reg [WIDTH-1:0] out,             // top of stack, or output of getter
   output reg [      2:0] status = `EMPTY  // none / empty / full / underflow /
@@ -101,13 +102,13 @@ module SuperStack
 
         `UNDERFLOW_RESET:
         begin
-          // New underflow_limit is greater than current index
-          if (index < underflow_limit)
-            status <= `UNDERFLOW;
+          // New index is greater than current one
+          if (index < new_index)
+            status <= `BAD_INDEX;
 
-          // New underflow_limit is equal or lower than current index
+          // New index is equal or lower than current one
           else begin
-            index = underflow_limit;
+            index = new_index;
 
             status <= getStatus(index);
           end
@@ -115,25 +116,19 @@ module SuperStack
 
         `UNDERFLOW_RESET_PUSH:
         begin
-          // Underflow_limit is greater than current index
-          if (index < underflow_limit) begin
-            stack[index] <= data;
+          // New index is greater than current one
+          if (index < new_index)
+            status <= `BAD_INDEX;
 
-            index = index + 1;
-
-            out <= data;
-            status <= getStatus(index);
-          end
-
-          // Both index and underflow_limit are equal to MAX_STACK
-          else if (underflow_limit == MAX_STACK)
+          // Both index and new index are equal to MAX_STACK
+          else if (new_index == MAX_STACK)
             status <= `OVERFLOW;
 
-          // Underflow_limit is equal or lower than current index
+          // New index is equal or lower than current index
           else begin
-            stack[underflow_limit] <= data;
+            stack[new_index] <= data;
 
-            index = underflow_limit+1;
+            index = new_index+1;
 
             out <= data;
             status <= getStatus(index);

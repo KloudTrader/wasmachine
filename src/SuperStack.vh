@@ -7,3 +7,4 @@
 
 `define FULL       4
 `define BAD_OFFSET 5
+`define BAD_INDEX  6
