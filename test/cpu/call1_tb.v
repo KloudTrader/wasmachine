@@ -39,7 +39,7 @@ module cpu_tb();
     #1
     reset <= 0;
 
-    #32
+    #29
     `assert(result, 42);
     `assert(result_type, `i64);
     `assert(result_empty, 0);

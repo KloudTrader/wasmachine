@@ -57,6 +57,7 @@ module cpu
   wire [            2:0] stack_status;
 
   reg  [STACK_DEPTH:0] underflow_limit = 8'b0;
+  reg  [STACK_DEPTH:0] new_index = 0;
   wire [STACK_DEPTH:0] stack_index;
 
   SuperStack #(
@@ -69,6 +70,7 @@ module cpu
     .op(stack_op),
     .data(stack_data),
     .underflow_limit(underflow_limit),
+    .new_index(new_index),
     .index(stack_index),
     .out(stack_out),
     .status(stack_status)
@@ -150,10 +152,11 @@ module cpu
     // Returning from a function call
     else begin
       PC              <= call_stack_out[32+2*(1+STACK_DEPTH)-1:  2*(1+STACK_DEPTH)];
-      underflow_limit <= call_stack_out[   2*(1+STACK_DEPTH)-1:1+      STACK_DEPTH];
-      stack_aux1      <= call_stack_out[           STACK_DEPTH:                  0];
+      new_index       <= call_stack_out[2*(1+STACK_DEPTH)-1:1+STACK_DEPTH];
+      underflow_limit <= call_stack_out[STACK_DEPTH:0];
 
-      call_stack_op <= `POP;
+      call_stack_op   <= `POP;
+      call_stack_data <= 0;
 
       // TODO check we have just one result item
       if(stack_status == `EMPTY)
@@ -164,7 +167,6 @@ module cpu
         stack_data <= stack_out;
       end
 
-      step <= EXEC2;
     end
   endtask
 
@@ -175,6 +177,7 @@ module cpu
       step <= FETCH;
       PC   <= pc;
       underflow_limit <= 0;
+      new_index <= 0;
     end
 
     else if(!trap) begin
@@ -243,7 +246,8 @@ module cpu
 
               // Parametric operators
               `op_drop: begin
-                stack_op <= `POP;
+                stack_op   <= `POP;
+                stack_data <= 0;
               end
 
               // Variable access
@@ -349,7 +353,8 @@ module cpu
               `op_i64_sub:
               begin
                 stack_aux1 <= stack_out;
-                stack_op <= `POP;
+                stack_op   <= `POP;
+                stack_data <= 0;
 
                 step <= EXEC2;
               end
@@ -365,20 +370,12 @@ module cpu
           step <= EXEC3;
 
           case (opcode)
-            // Control flow operators
-            `op_end: begin
-              // TODO Allow SuperStack to explicitly set a value on a position
-              // and reset index to it, independently of the underflow_limit
-              underflow_limit <= stack_aux1;
-
-              step <= FETCH;
-            end
-
             // Parametric operators
             `op_select: begin
               // Remove first operator from stack on next tick after condition
               // gets removed
-              stack_op <= `POP;
+              stack_op   <= `POP;
+              stack_data <= 0;
             end
           endcase
         end

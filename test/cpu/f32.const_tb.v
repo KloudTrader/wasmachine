@@ -28,7 +28,7 @@ module cpu_tb();
     $dumpfile("f32.const_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #18
+    #12
     `assert(result, 32'hc0000000);
     `assert(result_empty, 0);
 

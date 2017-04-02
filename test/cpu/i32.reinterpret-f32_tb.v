@@ -32,7 +32,7 @@ module cpu_tb();
     $dumpfile("i32.reinterpret-f32_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #24
+    #18
     `assert(result, 32'hc0000000);
     `assert(result_type, `f32);
     `assert(result_empty, 0);
