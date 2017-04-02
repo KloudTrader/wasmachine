@@ -1,3 +1,5 @@
+SHELL=/bin/bash -o pipefail
+
 SRC   = src
 BUILD = build
 
@@ -13,6 +15,8 @@ VVP      = vvp -N
 RED=\033[0;31m
 GREEN=\033[0;32m
 NC=\033[0m
+
+ECHO = echo -e
 
 
 all: test $(NAME).bin
@@ -42,16 +46,17 @@ test/SuperStack: $(BUILD)/SuperStack_tb.vcd
 test/%         : $(BUILD)/%_tb.vcd
 
 $(BUILD)/%_tb.vcd: $(BUILD)/%_tb
-	(cd $(BUILD) && $(VVP) ../$< > /dev/null)
-	[ $$? -eq 0 ] && \
-		echo "$(GREEN)ok$(NC)"
-	# [ $$? -ne 0 ] && \
-	# 	echo "$(RED)FAIL$(NC)" && \
-	# 	rm $< && \
-	# 	exit 1
+	( \
+		cd $(BUILD) && $(VVP) ../$< | \
+		(grep -v -e "opened for output" \
+						 -e "Not enough words in the file for the requested range" \
+		|| true) \
+	) \
+	&& $(ECHO) "$(GREEN)ok$(NC)" \
+	|| ($(ECHO) "$(RED)FAIL$(NC)" && exit 1)
 
 $(BUILD)/%_tb: test/%_tb.v $(SRC)/%.v test/assert.vh
-	echo -n $<"... "
+	$(ECHO) -n $<"... "
 	mkdir -p $(@D)
 	$(IVERILOG) -I test $< -o $@
 
@@ -123,16 +128,21 @@ test/cpu/reinterpretations: test/cpu/i32.reinterpret-f32
 test/cpu/i32.reinterpret-f32: $(BUILD)/cpu/i32.reinterpret-f32_tb.vcd
 
 $(BUILD)/cpu/%_tb.vcd: $(BUILD)/cpu/%_tb $(BUILD)/cpu/%.hex
-	(cd $(BUILD)/cpu && $(VVP) ../../$< > /dev/null)
-	[ $$? -eq 0 ] && \
-		echo "$(GREEN)ok$(NC)"
+	( \
+		cd $(BUILD)/cpu && $(VVP) ../../$< | \
+		(grep -v -e "opened for output" \
+						 -e "Not enough words in the file for the requested range" \
+		|| true) \
+	) \
+	&& $(ECHO) "$(GREEN)ok$(NC)" \
+	|| ($(ECHO) "$(RED)FAIL$(NC)" && exit 1)
 
 $(BUILD)/cpu/%.hex:
 	mkdir -p $(@D)
 	cp test/cpu/$(@F) $(BUILD)/cpu
 
 $(BUILD)/cpu/%_tb: test/cpu/%_tb.v $(SRC)/cpu.v test/assert.vh
-	echo -n $<"... "
+	$(ECHO) -n $<"... "
 	mkdir -p $(@D)
 	$(IVERILOG) -I test $< -o $@
 
@@ -143,9 +153,14 @@ view/cpu/%: test/cpu/%
 # genrom
 $(BUILD)/genrom_tb.vcd: $(BUILD)/genrom_tb
 	cp test/genrom.hex $(BUILD)
-	(cd $(BUILD) && $(VVP) ../$< > /dev/null)
-	[ $$? -eq 0 ] && \
-		echo "$(GREEN)ok$(NC)"
+	( \
+		cd $(BUILD) && $(VVP) ../$< | \
+		(grep -v -e "opened for output" \
+						 -e "Not enough words in the file for the requested range" \
+		|| true) \
+	) \
+	&& $(ECHO) "$(GREEN)ok$(NC)" \
+	|| ($(ECHO) "$(RED)FAIL$(NC)" && exit 1)
 
 
 #------------------------------
