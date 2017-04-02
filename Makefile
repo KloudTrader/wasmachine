@@ -11,6 +11,7 @@ VENDOR_DEPS = -y vendor/fpu/double_to_float \
 							-y vendor/LEB128
 IVERILOG = iverilog -I $(SRC) -y $(SRC) $(VENDOR_DEPS)
 VVP      = vvp -N
+GTKWAVE  = gtkwave -r gtkwaverc
 
 RED=\033[0;31m
 GREEN=\033[0;32m
@@ -61,7 +62,7 @@ $(BUILD)/%_tb: test/%_tb.v $(SRC)/%.v test/assert.vh
 	$(IVERILOG) -I test $< -o $@
 
 view/%: test/%
-	gtkwave $(BUILD)/$(@F)_tb.vcd test/$(@F)_tb.gtkw
+	$(GTKWAVE) $(BUILD)/$(@F)_tb.vcd test/$(@F)_tb.gtkw
 
 
 # cpu
@@ -147,7 +148,7 @@ $(BUILD)/cpu/%_tb: test/cpu/%_tb.v $(SRC)/cpu.v test/assert.vh
 	$(IVERILOG) -I test $< -o $@
 
 view/cpu/%: test/cpu/%
-	gtkwave $(BUILD)/cpu/$(@F)_tb.vcd test/cpu/cpu_tb.gtkw
+	$(GTKWAVE) $(BUILD)/cpu/$(@F)_tb.vcd test/cpu/cpu_tb.gtkw
 
 
 # genrom
