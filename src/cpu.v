@@ -17,7 +17,7 @@ module cpu
   output reg  [        63:0] result,
   output reg  [         1:0] result_type,
   output reg                 result_empty,
-  output reg  [         2:0] trap = `NONE
+  output reg  [         3:0] trap = `NONE
 );
 
   // ROM
@@ -56,7 +56,7 @@ module cpu
   wire [STACK_WIDTH-1:0] stack_out;
   wire [            2:0] stack_status;
 
-  reg  [STACK_DEPTH:0] underflow_limit = 8'b0;
+  reg  [STACK_DEPTH:0] underflow_limit = 0;
   reg  [STACK_DEPTH:0] new_index = 0;
   wire [STACK_DEPTH:0] stack_index;
 
@@ -77,7 +77,7 @@ module cpu
   );
 
   // Call stack
-  localparam CALL_STACK_WIDTH = 32 + 2*(STACK_DEPTH+1);
+  localparam CALL_STACK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
   localparam CALL_STACK_DEPTH = 3;
 
   reg  [                 1:0] call_stack_op;
@@ -139,34 +139,41 @@ module cpu
   reg [7:0]          opcode;
 
   logic [STACK_WIDTH - 1:0] stack_aux1, stack_aux2;
+  logic [6:0] block_type;
 
-  task call_return;
-    if(call_stack_status == `EMPTY) begin
-      result <= stack_out[63:0];
-      result_type <= stack_out[65:64];
-      result_empty <= stack_status == `EMPTY;
+  task block_return;
+    // TODO this check is not needed for functions, use named begin-end blocks
+    if(call_stack_status == `EMPTY)
+      trap <= `CALL_STACK_EMPTY;
 
-      trap <= `ENDED;
-    end
-
-    // Returning from a function call
     else begin
-      PC              <= call_stack_out[32+2*(1+STACK_DEPTH)-1:  2*(1+STACK_DEPTH)];
+      // TODO PC is needed so `br` can work going to the block end. When we got
+      //      it working, then we'll be able to unify both branches
+      if(call_stack_out[8+2*(1+STACK_DEPTH):7+2*(1+STACK_DEPTH)] == `block)
+        ;// PC already point to next instruction
+      else
+        PC <= call_stack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH):9+2*(1+STACK_DEPTH)];
+
       new_index       <= call_stack_out[2*(1+STACK_DEPTH)-1:1+STACK_DEPTH];
       underflow_limit <= call_stack_out[STACK_DEPTH:0];
 
       call_stack_op   <= `POP;
       call_stack_data <= 0;
 
-      // TODO check we have just one result item
-      if(stack_status == `EMPTY)
+      // Check type and set result value
+      block_type = call_stack_out[6+2*(1+STACK_DEPTH):2*(1+STACK_DEPTH)];
+      if(block_type == 7'h40)
         stack_op <= `UNDERFLOW_RESET;
 
-      else begin
+      // TODO Get and check function return types
+      // else if(7'h7f - block_type == stack_out[65:64]) begin
+      else if(1) begin
         stack_op   <= `UNDERFLOW_RESET_PUSH;
         stack_data <= stack_out;
       end
 
+      else
+        trap <= `TYPE_MISMATCH;
     end
   endtask
 
@@ -219,12 +226,37 @@ module cpu
               end
 
               `op_end: begin
-                // TODO `end` can be used to close conditionals and code blocks
-                call_return();
+                // Returning from main call (`start`, `export`), return results and halt
+                if(call_stack_status == `EMPTY) begin
+                  result <= stack_out[63:0];
+                  result_type <= stack_out[65:64];
+                  result_empty <= stack_status == `EMPTY;
+
+                  trap <= `ENDED;
+                end
+
+                // Returning from a function call
+                else
+                  case(call_stack_out[8+2*(1+STACK_DEPTH):7+2*(1+STACK_DEPTH)])
+                    `block_function: begin
+                      block_return();
+                    end
+                  endcase
               end
 
               `op_return: begin
-                call_return();
+                // Returning from main call (`start`, `export`), return results and halt
+                if(call_stack_status == `EMPTY) begin
+                  result <= stack_out[63:0];
+                  result_type <= stack_out[65:64];
+                  result_empty <= stack_status == `EMPTY;
+
+                  trap <= `ENDED;
+                end
+
+                // Returning from a function call
+                else
+                  block_return();
               end
 
               // Call operators
@@ -234,9 +266,13 @@ module cpu
 
                 // Store current return status on the call stack
                 call_stack_op   <= `PUSH;
+                // TODO Spec says "A direct call to a function with a mismatched
+                //      signature is a module verification error". Should return
+                //       value be verified, or it's already done at loading?
+                // TODO get function return value
                 // TODO substract function arguments
-                call_stack_data <= {PC+leb128_len, stack_index-8'b0,
-                                    underflow_limit};
+                call_stack_data <= {PC+leb128_len, `block_function, 7'b0,
+                                    stack_index-8'b0, underflow_limit};
 
                 // Set an empty stack for the called function
                 underflow_limit <= stack_index;

@@ -7,7 +7,7 @@ module cpu_tb();
   reg         reset = 0;
   wire [63:0] result;
   wire        result_empty;
-  wire [ 2:0] trap;
+  wire [ 3:0] trap;
 
   cpu #(
     .ROM_FILE("i64.eqz1.hex"),
