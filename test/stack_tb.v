@@ -8,7 +8,7 @@ module Stack_tb();
   parameter WIDTH = 8;
   parameter DEPTH = 1;  // frames (exponential)
 
-  localparam MAX_STACK = 1 << (DEPTH+1) - 1;
+  localparam MAX_STACK = (1 << DEPTH+1) - 1;
 
   reg              clk = 0;
   reg              reset;
@@ -58,20 +58,32 @@ module Stack_tb();
     `assert(status, `NONE);
     `assert(tos   , 8'h01);
 
+    op   <= `PUSH;
+    data <= 2;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h02);
+
     // Top of Stack
     op <= `NONE;
     #2
     `assert(status, `NONE);
-    `assert(tos   , 8'h01);
+    `assert(tos   , 8'h02);
 
     // Overflow
     op   <= `PUSH;
     data <= 3;
     #2
     `assert(status, `OVERFLOW);
-    `assert(tos   , 8'h01);
+    `assert(tos   , 8'h02);
 
     // Pop
+    op   <= `POP;
+    data <= 0;
+    #2
+    `assert(status, `NONE);
+    `assert(tos   , 8'h01);
+
     op   <= `POP;
     data <= 0;
     #2
@@ -82,14 +94,12 @@ module Stack_tb();
     data <= 0;
     #2
     `assert(status, `EMPTY);
-    // `assert(tos   , 8'h00);
 
     // Replace
     op   <= `REPLACE;
     data <= 4;
     #2
     `assert(status, `UNDERFLOW);
-    // `assert(tos   , 8'h00);
 
     op   <= `PUSH;
     data <= 5;

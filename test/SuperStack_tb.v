@@ -8,7 +8,7 @@ module SuperStack_tb();
   parameter WIDTH = 8;
   parameter DEPTH = 1;  // frames (exponential)
 
-  localparam MAX_STACK = 1 << (DEPTH+1) - 1;
+  localparam MAX_STACK = (1 << DEPTH+1) - 1;
 
   reg              clk = 0;
   reg              reset;
@@ -67,26 +67,43 @@ module SuperStack_tb();
     op   <= `PUSH;
     data <= 1;
     #2
-    `assert(status, `FULL);
+    `assert(status, `NONE);
     `assert(out   , 8'h01);
     `assert(out1  , 8'h00);
+
+    op   <= `PUSH;
+    data <= 2;
+    #2
+    `assert(status, `FULL);
+    `assert(out   , 8'h02);
+    `assert(out1  , 8'h01);
+    `assert(out2  , 8'h00);
 
     // Top of Stack
     op <= `NONE;
     #2
     `assert(status, `FULL);
-    `assert(out   , 8'h01);
-    `assert(out1  , 8'h00);
+    `assert(out   , 8'h02);
+    `assert(out1  , 8'h01);
+    `assert(out2  , 8'h00);
 
     // Overflow
     op   <= `PUSH;
-    data <= 2;
+    data <= 3;
     #2
     `assert(status, `OVERFLOW);
+    `assert(out   , 8'h02);
+    `assert(out1  , 8'h01);
+    `assert(out2  , 8'h00);
+
+    // Pop
+    op   <= `POP;
+    data <= 0;
+    #2
+    `assert(status, `NONE);
     `assert(out   , 8'h01);
     `assert(out1  , 8'h00);
 
-    // Pop
     op   <= `POP;
     data <= 0;
     #2
@@ -97,14 +114,12 @@ module SuperStack_tb();
     data <= 0;
     #2
     `assert(status, `EMPTY);
-    // `assert(out   , 8'h00);
 
     // Replace
     op   <= `REPLACE;
     data <= 4;
     #2
     `assert(status, `UNDERFLOW);
-    // `assert(out   , 8'h00);
 
     op   <= `PUSH;
     data <= 5;
@@ -156,7 +171,7 @@ module SuperStack_tb();
     op   <= `PUSH;
     data <= 9;
     #2
-    `assert(status, `FULL);
+    `assert(status, `NONE);
     `assert(out   , 8'h09);
     `assert(out1  , 8'h08);
     `assert(index , 2);

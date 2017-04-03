@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Thu Mar 23 22:46:58 2017
+[*] Mon Apr  3 21:30:53 2017
 [*]
 [dumpfile] "/home/piranna/github/wasmachine/build/stack_tb.vcd"
-[dumpfile_mtime] "Thu Mar 23 22:46:39 2017"
-[dumpfile_size] 775
+[dumpfile_mtime] "Mon Apr  3 21:30:07 2017"
+[dumpfile_size] 1200
 [savefile] "/home/piranna/github/wasmachine/test/stack_tb.gtkw"
 [timestart] 0
 [size] 1366 720
 [pos] -1 -1
-*-1.155780 2 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-2.696093 2 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] Stack_tb.
 [sst_width] 213
 [signals_width] 209
@@ -17,9 +17,6 @@
 [sst_vpaned_height] 293
 @28
 Stack_tb.dut.clk
-@200
--
-@28
 Stack_tb.dut.reset
 @200
 -
@@ -27,8 +24,6 @@ Stack_tb.dut.reset
 Stack_tb.dut.op[1:0]
 @22
 Stack_tb.dut.data[7:0]
-@29
-Stack_tb.underflow_limit[1:0]
 @200
 -
 @22

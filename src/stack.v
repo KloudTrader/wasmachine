@@ -25,7 +25,7 @@ module stack
   output reg [      1:0] status = `EMPTY  // none / empty / underflow / overflow
 );
 
-  localparam MAX_STACK = 1 << (DEPTH+1) - 1;
+  localparam MAX_STACK = (1 << DEPTH+1) - 1;
 
   reg [WIDTH-1:0] stack [0:MAX_STACK-1];
   reg [  DEPTH:0] index = 0;
