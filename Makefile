@@ -9,7 +9,7 @@ DEPS = $(SRC)/dividerp1.v $(SRC)/genrom.v $(SRC)/$(NAME).v
 VENDOR_DEPS = -y vendor/fpu/double_to_float \
 							-y vendor/fpu/float_to_double \
 							-y vendor/LEB128
-IVERILOG = iverilog -I $(SRC) -y $(SRC) $(VENDOR_DEPS)
+IVERILOG = iverilog -g2005-sv -I $(SRC) -y $(SRC) $(VENDOR_DEPS)
 VVP      = vvp -N
 GTKWAVE  = gtkwave -r gtkwaverc
 

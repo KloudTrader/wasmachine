@@ -48,6 +48,12 @@ module SuperStack
       getStatus = `NONE;
   endfunction
 
+  task setOutput;
+    out  <= stack[index-1];
+
+    status <= getStatus(index);
+  endtask
+
   always @(posedge clk) begin
     if (reset) begin
       index  <= 0;
@@ -56,23 +62,18 @@ module SuperStack
 
     else
       case(op)
-        `NONE:
-        begin
-          out <= stack[index-1];
-          status <= getStatus(index);
-        end
+        `NONE: setOutput();
 
         `PUSH:
         begin
           if (index == MAX_STACK)
             status <= `OVERFLOW;
           else begin
-            stack[index] <= data;
+            stack[index] = data;
 
             index = index + 1;
 
-            out <= data;
-            status <= getStatus(index);
+            setOutput();
           end
         end
 
@@ -83,8 +84,7 @@ module SuperStack
           else begin
             index = index - (1+data);
 
-            out <= stack[index-1];
-            status <= getStatus(index);
+            setOutput();
           end
         end
 
@@ -93,10 +93,9 @@ module SuperStack
           if (index <= underflow_limit)
             status <= `UNDERFLOW;
           else begin
-            stack[index-1] <= data;
+            stack[index-1] = data;
 
-            out <= data;
-            status <= getStatus(index);
+            setOutput();
           end
         end
 
@@ -126,12 +125,11 @@ module SuperStack
 
           // New index is equal or lower than current index
           else begin
-            stack[new_index] <= data;
+            stack[new_index] = data;
 
             index = new_index+1;
 
-            out <= data;
-            status <= getStatus(index);
+            setOutput();
           end
         end
 
@@ -152,16 +150,14 @@ module SuperStack
             status <= `BAD_OFFSET;
 
           else begin
-            stack[offset] <= data;
+            stack[offset] = data;
 
             if(offset < index-1)
               status <= `NONE;
 
             // Update out if we are modifying ToS
-            else begin
-              out <= data;
-              status <= getStatus(index);
-            end
+            else
+              setOutput();
           end
         end
       endcase
