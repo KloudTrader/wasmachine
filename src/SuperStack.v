@@ -150,10 +150,7 @@ module SuperStack
 
         `UNDERFLOW_SET:
         begin
-          if (index <= offset)
-            status <= `BAD_OFFSET;
-
-          else begin
+          if (offset < index) begin
             stack[offset] = data;
 
             if(offset < index-1)
@@ -162,6 +159,23 @@ module SuperStack
             // Update out if we are modifying ToS
             else
               setOutput();
+          end
+
+          // Setting over current index
+          else if (index < offset)
+            status <= `BAD_OFFSET;
+
+          // Stack is full
+          else if (offset == MAX_STACK)
+            status <= `OVERFLOW;
+
+          // Push to ToS
+          else begin
+            stack[offset] = data;
+
+            index = index + 1;
+
+            setOutput();
           end
         end
       endcase
