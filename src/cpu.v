@@ -168,12 +168,12 @@ module cpu
       // Check type and set result value
       block_type = call_stack_out[6+2*(1+STACK_DEPTH):2*(1+STACK_DEPTH)];
       if(block_type == 7'h40)
-        stack_op <= `UNDERFLOW_RESET;
+        stack_op <= `INDEX_RESET;
 
       // TODO Get and check function return types
       // else if(7'h7f - block_type == stack_out[65:64]) begin
       else if(1) begin
-        stack_op   <= `UNDERFLOW_RESET_PUSH;
+        stack_op   <= `INDEX_RESET_AND_PUSH;
         stack_data <= stack_out;
       end
 

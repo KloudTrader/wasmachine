@@ -153,7 +153,7 @@ module SuperStack_tb();
     `assert(out   , 8'h09);
     `assert(index , 2);
 
-    op <= `UNDERFLOW_RESET;
+    op <= `INDEX_RESET;
     new_index <= 1;
     #2
     `assert(status, `EMPTY);
@@ -185,7 +185,7 @@ module SuperStack_tb();
 
     // Underflow reset push
     underflow_limit <= 2;
-    op <= `UNDERFLOW_RESET_PUSH;
+    op <= `INDEX_RESET_AND_PUSH;
     data <= 10;
     new_index <= 0;
     #2
@@ -194,7 +194,7 @@ module SuperStack_tb();
     `assert(index , 1);
 
     underflow_limit <= 0;
-    op <= `UNDERFLOW_RESET_PUSH;
+    op <= `INDEX_RESET_AND_PUSH;
     data <= 11;
     #2
     `assert(status, `NONE);

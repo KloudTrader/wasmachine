@@ -100,7 +100,7 @@ module SuperStack
           end
         end
 
-        `UNDERFLOW_RESET:
+        `INDEX_RESET:
         begin
           // New index is greater than current one
           if (index < new_index)
@@ -114,7 +114,7 @@ module SuperStack
           end
         end
 
-        `UNDERFLOW_RESET_PUSH:
+        `INDEX_RESET_AND_PUSH:
         begin
           // New index is greater than current one
           if (index < new_index)
