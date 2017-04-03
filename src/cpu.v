@@ -147,39 +147,33 @@ module cpu
   logic [6:0] block_type;
 
   task block_return;
-    // TODO this check is not needed for functions, use named begin-end blocks
-    if(call_stack_status == `EMPTY)
-      trap <= `CALL_STACK_EMPTY;
+    // TODO PC is needed so `br` can work going to the block end. When we got
+    //      it working, then we'll be able to unify both branches
+    if(call_stack_out[8+2*(1+STACK_DEPTH):7+2*(1+STACK_DEPTH)] == `block)
+      ;// PC already point to next instruction
+    else
+      PC <= call_stack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH):9+2*(1+STACK_DEPTH)];
 
-    else begin
-      // TODO PC is needed so `br` can work going to the block end. When we got
-      //      it working, then we'll be able to unify both branches
-      if(call_stack_out[8+2*(1+STACK_DEPTH):7+2*(1+STACK_DEPTH)] == `block)
-        ;// PC already point to next instruction
-      else
-        PC <= call_stack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH):9+2*(1+STACK_DEPTH)];
+    new_index       <= call_stack_out[2*(1+STACK_DEPTH)-1:1+STACK_DEPTH];
+    underflow_limit <= call_stack_out[STACK_DEPTH:0];
 
-      new_index       <= call_stack_out[2*(1+STACK_DEPTH)-1:1+STACK_DEPTH];
-      underflow_limit <= call_stack_out[STACK_DEPTH:0];
+    call_stack_op   <= `POP;
+    call_stack_data <= 0;
 
-      call_stack_op   <= `POP;
-      call_stack_data <= 0;
+    // Check type and set result value
+    block_type = call_stack_out[6+2*(1+STACK_DEPTH):2*(1+STACK_DEPTH)];
+    if(block_type == 7'h40)
+      stack_op <= `INDEX_RESET;
 
-      // Check type and set result value
-      block_type = call_stack_out[6+2*(1+STACK_DEPTH):2*(1+STACK_DEPTH)];
-      if(block_type == 7'h40)
-        stack_op <= `INDEX_RESET;
-
-      // TODO Get and check function return types
-      // else if(7'h7f - block_type == stack_out[65:64]) begin
-      else if(1) begin
-        stack_op   <= `INDEX_RESET_AND_PUSH;
-        stack_data <= stack_out;
-      end
-
-      else
-        trap <= `TYPE_MISMATCH;
+    // TODO Get and check function return types
+    // else if(7'h7f - block_type == stack_out[65:64]) begin
+    else if(1) begin
+      stack_op   <= `INDEX_RESET_AND_PUSH;
+      stack_data <= stack_out;
     end
+
+    else
+      trap <= `TYPE_MISMATCH;
   endtask
 
   // Main loop
