@@ -28,6 +28,8 @@ module SuperStack
   input      [DEPTH  :0] new_index,       // New index
   output reg [DEPTH  :0] index = 0,       // Current top of stack position
   output reg [WIDTH-1:0] out,             // top of stack, or output of getter
+  output reg [WIDTH-1:0] out1,
+  output reg [WIDTH-1:0] out2,
   output reg [      2:0] status = `EMPTY  // none / empty / full / underflow /
                                           // overflow / unknown_op
 );
@@ -50,6 +52,8 @@ module SuperStack
 
   task setOutput;
     out  <= stack[index-1];
+    out1 <= stack[index-2];
+    out2 <= stack[index-3];
 
     status <= getStatus(index);
   endtask

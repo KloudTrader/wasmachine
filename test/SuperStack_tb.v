@@ -19,6 +19,8 @@ module SuperStack_tb();
   reg  [DEPTH  :0] new_index;
   wire [DEPTH  :0] index;
   wire [WIDTH-1:0] out;
+  wire [WIDTH-1:0] out1;
+  wire [WIDTH-1:0] out2;
   wire [      2:0] status;
 
   SuperStack #(
@@ -35,6 +37,8 @@ module SuperStack_tb();
     .new_index(new_index),
     .index(index),
     .out(out),
+    .out1(out1),
+    .out2(out2),
     .status(status)
   );
 
@@ -65,12 +69,14 @@ module SuperStack_tb();
     #2
     `assert(status, `FULL);
     `assert(out   , 8'h01);
+    `assert(out1  , 8'h00);
 
     // Top of Stack
     op <= `NONE;
     #2
     `assert(status, `FULL);
     `assert(out   , 8'h01);
+    `assert(out1  , 8'h00);
 
     // Overflow
     op   <= `PUSH;
@@ -78,6 +84,7 @@ module SuperStack_tb();
     #2
     `assert(status, `OVERFLOW);
     `assert(out   , 8'h01);
+    `assert(out1  , 8'h00);
 
     // Pop
     op   <= `POP;
@@ -151,6 +158,7 @@ module SuperStack_tb();
     #2
     `assert(status, `FULL);
     `assert(out   , 8'h09);
+    `assert(out1  , 8'h08);
     `assert(index , 2);
 
     op <= `INDEX_RESET;
