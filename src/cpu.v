@@ -14,9 +14,9 @@ module cpu
   input  wire                clk,
   input  wire                reset,
   input  wire [ROM_ADDR-1:0] pc,
-  output reg  [        63:0] result,
-  output reg  [         1:0] result_type,
-  output reg                 result_empty,
+  output wire [        63:0] result,
+  output wire [         1:0] result_type,
+  output wire                result_empty,
   output reg  [         3:0] trap = `NONE
 );
 
@@ -126,6 +126,11 @@ module cpu
     .output_z_ack(double_to_float_z_ack)
   );
 
+  // Continuous assignments
+  assign result       = stack_out[63: 0];
+  assign result_type  = stack_out[65:64];
+  assign result_empty = stack_status == `EMPTY;
+
   // CPU internal status
   localparam FETCH  = 3'b000;
   localparam FETCH2 = 3'b001;
@@ -227,15 +232,10 @@ module cpu
 
               `op_end: begin
                 // Returning from main call (`start`, `export`), return results and halt
-                if(call_stack_status == `EMPTY) begin
-                  result <= stack_out[63:0];
-                  result_type <= stack_out[65:64];
-                  result_empty <= stack_status == `EMPTY;
-
+                if(call_stack_status == `EMPTY)
                   trap <= `ENDED;
-                end
 
-                // Returning from a function call
+                // Returning from a function call, or end of a block
                 else
                   case(call_stack_out[8+2*(1+STACK_DEPTH):7+2*(1+STACK_DEPTH)])
                     `block_function: begin
@@ -246,13 +246,8 @@ module cpu
 
               `op_return: begin
                 // Returning from main call (`start`, `export`), return results and halt
-                if(call_stack_status == `EMPTY) begin
-                  result <= stack_out[63:0];
-                  result_type <= stack_out[65:64];
-                  result_empty <= stack_status == `EMPTY;
-
+                if(call_stack_status == `EMPTY)
                   trap <= `ENDED;
-                end
 
                 // Returning from a function call
                 else
