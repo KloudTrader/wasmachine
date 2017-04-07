@@ -131,6 +131,9 @@ module cpu
   assign result_type  = stack_out[65:64];
   assign result_empty = stack_status == `EMPTY;
 
+  wire[31:0] rom_data_PC;
+  assign rom_data_PC = rom_data[71:40];
+
   // CPU internal status
   localparam FETCH  = 3'b000;
   localparam FETCH2 = 3'b001;
@@ -227,13 +230,13 @@ module cpu
               `op_block: begin
                 // Store current status on the blocks stack
                 call_stack_op   <= `PUSH;
-                call_stack_data <= {rom_data[79:40], `block, leb128_out[6:0],
+                call_stack_data <= {rom_data_PC, `block, leb128_out[6:0],
                                     stack_index, underflow_limit};
 
                 // Set an empty stack for the called block
                 underflow_limit <= stack_index;
 
-                PC <= PC+4;
+                PC <= PC+5;
               end
 
               `op_end: begin

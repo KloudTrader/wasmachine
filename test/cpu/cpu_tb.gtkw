@@ -1,10 +1,10 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Fri Apr  7 14:15:11 2017
+[*] Fri Apr  7 18:47:28 2017
 [*]
-[dumpfile] "/home/piranna/github/wasmachine/build/cpu/block_tb.vcd"
-[dumpfile_mtime] "Fri Apr  7 14:08:13 2017"
-[dumpfile_size] 8702
+[dumpfile] "/home/piranna/github/wasmachine/build/cpu/br_tb.vcd"
+[dumpfile_mtime] "Fri Apr  7 18:46:55 2017"
+[dumpfile_size] 9057
 [savefile] "/home/piranna/github/wasmachine/test/cpu/cpu_tb.gtkw"
 [timestart] 0
 [size] 1366 720
@@ -41,6 +41,8 @@ cpu_tb.result_empty
 cpu_tb.dut.rom_addr[3:0]
 cpu_tb.dut.rom_extra[3:0]
 cpu_tb.dut.rom_data[127:0]
+@23
+cpu_tb.dut.rom_data_PC[31:0]
 @28
 cpu_tb.dut.rom_error
 @200
@@ -60,9 +62,7 @@ cpu_tb.dut.stack_status[2:0]
 cpu_tb.dut.call_stack_op[1:0]
 @22
 cpu_tb.dut.call_stack_data[28:0]
-@23
 cpu_tb.dut.call_stack.index[3:0]
-@22
 cpu_tb.dut.call_stack_out[28:0]
 cpu_tb.dut.block_type[6:0]
 @28
