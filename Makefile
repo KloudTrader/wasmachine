@@ -71,7 +71,8 @@ test/cpu: test/cpu/control_flow_operators test/cpu/call_operators \
 					test/cpu/comparison_operators test/cpu/numeric_operators \
 					test/cpu/conversions test/cpu/reinterpretations
 
-test/cpu/control_flow_operators: test/cpu/return
+test/cpu/control_flow_operators: test/cpu/block test/cpu/return
+test/cpu/block: $(BUILD)/cpu/block_tb.vcd
 test/cpu/return: $(BUILD)/cpu/return_tb.vcd
 
 test/cpu/call_operators: test/cpu/call

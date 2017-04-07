@@ -224,18 +224,27 @@ module cpu
               `op_nop: begin
               end
 
+              `op_block: begin
+                // Store current status on the blocks stack
+                call_stack_op   <= `PUSH;
+                call_stack_data <= {rom_data[79:40], `block, leb128_out[6:0],
+                                    stack_index, underflow_limit};
+
+                // Set an empty stack for the called block
+                underflow_limit <= stack_index;
+
+                PC <= PC+4;
+              end
+
               `op_end: begin
-                // Returning from main call (`start`, `export`), return results and halt
+                // Returning from main call (`start`, `export`), return results
+                // and halt
                 if(call_stack_status == `EMPTY)
                   trap <= `ENDED;
 
                 // Returning from a function call, or end of a block
                 else
-                  case(call_stack_out[8+2*(1+STACK_DEPTH):7+2*(1+STACK_DEPTH)])
-                    `block_function: begin
-                      block_return();
-                    end
-                  endcase
+                  block_return();
               end
 
               `op_return: begin

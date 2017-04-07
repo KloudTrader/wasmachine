@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Sun Apr  2 11:13:10 2017
+[*] Fri Apr  7 14:15:11 2017
 [*]
-[dumpfile] "/home/piranna/github/wasmachine/build/cpu/call1_tb.vcd"
-[dumpfile_mtime] "Sun Apr  2 11:12:05 2017"
-[dumpfile_size] 8529
+[dumpfile] "/home/piranna/github/wasmachine/build/cpu/block_tb.vcd"
+[dumpfile_mtime] "Fri Apr  7 14:08:13 2017"
+[dumpfile_size] 8702
 [savefile] "/home/piranna/github/wasmachine/test/cpu/cpu_tb.gtkw"
-[timestart] 7
+[timestart] 0
 [size] 1366 720
 [pos] -1 -1
-*-2.901924 23 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-2.901924 17 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] cpu_tb.
 [treeopen] cpu_tb.dut.
 [sst_width] 213
@@ -34,7 +34,6 @@ cpu_tb.trap[3:0]
 @22
 cpu_tb.result[63:0]
 @28
-cpu_tb.result_type[1:0]
 cpu_tb.result_empty
 @200
 -ROM
@@ -61,8 +60,10 @@ cpu_tb.dut.stack_status[2:0]
 cpu_tb.dut.call_stack_op[1:0]
 @22
 cpu_tb.dut.call_stack_data[28:0]
-cpu_tb.dut.call_stack_out[28:0]
 @23
+cpu_tb.dut.call_stack.index[3:0]
+@22
+cpu_tb.dut.call_stack_out[28:0]
 cpu_tb.dut.block_type[6:0]
 @28
 cpu_tb.dut.call_stack_status[1:0]

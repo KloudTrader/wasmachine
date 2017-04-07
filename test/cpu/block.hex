@@ -1,0 +1,4 @@
+02 00 00 00 08  // block
+  42 2a         // i64.const 42 - The answer to Life, Universe and Everything else
+0b              // end
+0b              // end
