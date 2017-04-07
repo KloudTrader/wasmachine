@@ -179,6 +179,35 @@ module cpu
       trap <= `TYPE_MISMATCH;
   endtask
 
+  task block_break;
+    input [31:0] depth;
+
+    // TODO control we don't break out a function slice
+
+    // Break to outter block, remove inner ones first
+    if(depth) begin
+      // TODO can we branch also over `if`'s and to outer functions?
+      call_stack_op   <= `POP;
+      call_stack_data <= depth-1;  // Remove all slices except the desired one
+
+      step <= EXEC2;
+    end
+
+    // Current block
+    else
+      block_break2();
+  endtask
+
+  task block_break2;
+    case (call_stack_out[8+2*(1+STACK_DEPTH):7+2*(1+STACK_DEPTH)])
+      `block     : block_return();
+      `block_loop: block_loop_back();
+
+      default:
+        trap <= `BAD_BLOCK_TYPE;
+    endcase
+  endtask
+
   // Main loop
   always @(posedge clk) begin
     if(reset) begin
@@ -248,6 +277,14 @@ module cpu
                 // Returning from a function call, or end of a block
                 else
                   block_return();
+              end
+
+              `op_br: begin
+                if(stack_status == `EMPTY)
+                  trap <= `STACK_EMPTY;
+
+                else
+                  block_break(leb128_out);
               end
 
               `op_return: begin
@@ -421,6 +458,15 @@ module cpu
           step <= FETCH;
 
           case (opcode)
+            // Control flow operators
+            `op_br: begin
+              if(call_stack_status > `EMPTY)
+                trap <= `CALL_STACK_ERROR;
+
+              else
+                block_break2();
+            end
+
             // Call operators
             `op_call: begin
               PC <= leb128_out;
