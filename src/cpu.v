@@ -54,6 +54,8 @@ module cpu
   reg  [            2:0] stack_op;
   reg  [STACK_WIDTH-1:0] stack_data;
   wire [STACK_WIDTH-1:0] stack_out;
+  wire [STACK_WIDTH-1:0] stack_out1;
+  wire [STACK_WIDTH-1:0] stack_out2;
   wire [            2:0] stack_status;
 
   reg  [STACK_DEPTH:0] underflow_limit = 0;
@@ -73,6 +75,8 @@ module cpu
     .new_index(new_index),
     .index(stack_index),
     .out(stack_out),
+    .out1(stack_out1),
+    .out2(stack_out2),
     .status(stack_status)
   );
 
@@ -150,12 +154,10 @@ module cpu
   logic [6:0] block_type;
 
   task block_return;
-    // TODO PC is needed so `br` can work going to the block end. When we got
-    //      it working, then we'll be able to unify both branches
-    if(call_stack_out[8+2*(1+STACK_DEPTH):7+2*(1+STACK_DEPTH)] == `block)
-      ;// PC already point to next instruction
-    else
-      PC <= call_stack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH):9+2*(1+STACK_DEPTH)];
+    reg [65:0] data;
+    data = (opcode == `op_br_if) ? stack_out1 : stack_out;
+
+    PC <= call_stack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH):9+2*(1+STACK_DEPTH)];
 
     new_index       <= call_stack_out[2*(1+STACK_DEPTH)-1:1+STACK_DEPTH];
     underflow_limit <= call_stack_out[STACK_DEPTH:0];
@@ -169,10 +171,10 @@ module cpu
       stack_op <= `INDEX_RESET;
 
     // TODO Get and check function return types
-    // else if(7'h7f - block_type == stack_out[65:64]) begin
+    // else if(7'h7f - block_type == data[65:64]) begin
     else if(1) begin
       stack_op   <= `INDEX_RESET_AND_PUSH;
-      stack_data <= stack_out;
+      stack_data <= data;
     end
 
     else
@@ -284,6 +286,17 @@ module cpu
                   trap <= `STACK_EMPTY;
 
                 else
+                  block_break(leb128_out);
+              end
+
+              `op_br_if: begin
+                if(stack_status == `EMPTY)
+                  trap <= `STACK_EMPTY;
+
+                else if(stack_out[65:64] != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else if(stack_out[31:0])
                   block_break(leb128_out);
               end
 
@@ -459,7 +472,8 @@ module cpu
 
           case (opcode)
             // Control flow operators
-            `op_br: begin
+            `op_br,
+            `op_br_if: begin
               if(call_stack_status > `EMPTY)
                 trap <= `CALL_STACK_ERROR;
 
