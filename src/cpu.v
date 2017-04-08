@@ -53,14 +53,13 @@ module cpu
 
   reg  [            2:0] stack_op;
   reg  [STACK_WIDTH-1:0] stack_data;
+  reg  [STACK_DEPTH  :0] stack_underflow = 0;
+  reg  [STACK_DEPTH  :0] stack_newIndex = 0;
+  wire [STACK_DEPTH  :0] stack_index;
   wire [STACK_WIDTH-1:0] stack_out;
   wire [STACK_WIDTH-1:0] stack_out1;
   wire [STACK_WIDTH-1:0] stack_out2;
   wire [            2:0] stack_status;
-
-  reg  [STACK_DEPTH:0] underflow_limit = 0;
-  reg  [STACK_DEPTH:0] new_index = 0;
-  wire [STACK_DEPTH:0] stack_index;
 
   SuperStack #(
     .WIDTH(STACK_WIDTH),
@@ -71,8 +70,8 @@ module cpu
     .reset(reset),
     .op(stack_op),
     .data(stack_data),
-    .underflow_limit(underflow_limit),
-    .new_index(new_index),
+    .underflow_limit(stack_underflow),
+    .new_index(stack_newIndex),
     .index(stack_index),
     .out(stack_out),
     .out1(stack_out1),
@@ -80,26 +79,53 @@ module cpu
     .status(stack_status)
   );
 
-  // Call stack
-  localparam CALL_STACK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
-  localparam CALL_STACK_DEPTH = 3;
+  // Block stack
+  localparam BLOCK_STACK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
+  localparam BLOCK_STACK_DEPTH = 3;
 
-  reg  [                 1:0] call_stack_op;
-  reg  [CALL_STACK_WIDTH-1:0] call_stack_data;
-  wire [CALL_STACK_WIDTH-1:0] call_stack_out;
-  wire [                 1:0] call_stack_status;
+  reg  [                  2:0] blockStack_op;
+  reg  [BLOCK_STACK_WIDTH-1:0] blockStack_data;
+  reg  [BLOCK_STACK_DEPTH  :0] blockStack_underflow = 0;
+  reg  [BLOCK_STACK_DEPTH  :0] blockStack_newIndex = 0;
+  wire [BLOCK_STACK_DEPTH  :0] blockStack_index;
+  wire [BLOCK_STACK_WIDTH-1:0] blockStack_out;
+  wire [                  2:0] blockStack_status;
+
+  SuperStack #(
+    .WIDTH(BLOCK_STACK_WIDTH),
+    .DEPTH(BLOCK_STACK_DEPTH)
+  )
+  blockStack (
+    .clk(clk),
+    .reset(reset),
+    .op(blockStack_op),
+    .data(blockStack_data),
+    .new_index(blockStack_newIndex),
+    .index(blockStack_index),
+    .out(blockStack_out),
+    .status(blockStack_status)
+  );
+
+  // Call stack
+  localparam CALL_STACK_WIDTH = ROM_ADDR + 7 + 2*(BLOCK_STACK_DEPTH+1) + 2*(STACK_DEPTH+1);
+  localparam CALL_STACK_DEPTH = 1;
+
+  reg  [                 1:0] callStack_op;
+  reg  [CALL_STACK_WIDTH-1:0] callStack_data;
+  wire [CALL_STACK_WIDTH-1:0] callStack_out;
+  wire [                 1:0] callStack_status;
 
   stack #(
     .WIDTH(CALL_STACK_WIDTH),
     .DEPTH(CALL_STACK_DEPTH)
   )
-  call_stack (
+  callStack (
     .clk(clk),
     .reset(reset),
-    .op(call_stack_op),
-    .data(call_stack_data),
-    .tos(call_stack_out),
-    .status(call_stack_status)
+    .op(callStack_op),
+    .data(callStack_data),
+    .tos(callStack_out),
+    .status(callStack_status)
   );
 
   // LEB128 - decoder of `varintN` values
@@ -130,13 +156,25 @@ module cpu
     .output_z_ack(double_to_float_z_ack)
   );
 
-  // Continuous assignments
+  // Continuous assignments & wire aliases
   assign result       = stack_out[63: 0];
   assign result_type  = stack_out[65:64];
   assign result_empty = stack_status == `EMPTY;
 
-  wire[31:0] rom_data_PC;
-  assign rom_data_PC = rom_data[71:40];
+  wire[31:0] rom_data_PC = rom_data[71:40];
+
+  wire[ ROM_ADDR-1:0] blockStack_out_PC         = blockStack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH)  :9+2*(1+STACK_DEPTH)];
+  wire[          1:0] blockStack_out_type       = blockStack_out[           8+2*(1+STACK_DEPTH)  :7+2*(1+STACK_DEPTH)];
+  wire[          6:0] blockStack_out_returnType = blockStack_out[           6+2*(1+STACK_DEPTH)  :  2*(1+STACK_DEPTH)];
+  wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[             2*(1+STACK_DEPTH)-1:     1+STACK_DEPTH ];
+  wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[                  STACK_DEPTH   :                  0];
+
+  wire[ ROM_ADDR-1:0] callStack_out_PC             = callStack_out[ROM_ADDR-1+7+2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)  :7+2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)];
+  wire[          6:0] callStack_out_returnType     = callStack_out[           6+2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)  :  2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)];
+  wire[STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[             2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)-1:     BLOCK_STACK_DEPTH+1 +2*(STACK_DEPTH+1)];
+  wire[STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[                BLOCK_STACK_DEPTH+1 +2*(STACK_DEPTH+1)-1:                          2*(1+STACK_DEPTH)];
+  wire[STACK_DEPTH:0] callStack_out_index          = callStack_out[                                     2*(1+STACK_DEPTH)-1:                             1+STACK_DEPTH ];
+  wire[STACK_DEPTH:0] callStack_out_underflow      = callStack_out[                                          STACK_DEPTH   :                                          0];
 
   // CPU internal status
   localparam FETCH  = 3'b000;
@@ -151,27 +189,57 @@ module cpu
   reg [7:0]          opcode;
 
   logic [STACK_WIDTH - 1:0] stack_aux1, stack_aux2;
-  logic [6:0] block_type;
+
+  task call_return;
+    // Set program counter to next instruction after function call
+    PC <= callStack_out_PC;
+
+    // Reset stacks
+    callStack_op   <= `POP;
+    callStack_data <= 0;
+
+    blockStack_newIndex  <= callStack_out_blockIndex;
+    blockStack_underflow <= callStack_out_blockUnderflow;
+    blockStack_op        <= `INDEX_RESET;
+
+    stack_newIndex  <= blockStack_out_index;
+    stack_underflow <= blockStack_out_underflow;
+
+    // Check type and set result value
+    if(callStack_out_returnType == 7'h40)
+      stack_op <= `INDEX_RESET;
+
+    // TODO Get and check function return types
+    // else if(7'h7f - callStack_out_returnType == stack_out[65:64]) begin
+    else if(1) begin
+      stack_op   <= `INDEX_RESET_AND_PUSH;
+      stack_data <= stack_out;
+    end
+
+    else
+      trap <= `TYPE_MISMATCH;
+  endtask
 
   task block_return;
     reg [65:0] data;
     data = (opcode == `op_br_if) ? stack_out1 : stack_out;
 
-    PC <= call_stack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH):9+2*(1+STACK_DEPTH)];
+    // Set program counter to next instruction after block
+    PC <= blockStack_out_PC;
 
-    new_index       <= call_stack_out[2*(1+STACK_DEPTH)-1:1+STACK_DEPTH];
-    underflow_limit <= call_stack_out[STACK_DEPTH:0];
+    // Reset stacks
+    blockStack_op   <= `POP;
+    blockStack_data <= 0;
 
-    call_stack_op   <= `POP;
-    call_stack_data <= 0;
+    stack_newIndex  <= blockStack_out_index;
+    stack_underflow <= blockStack_out_underflow;
 
     // Check type and set result value
-    block_type = call_stack_out[6+2*(1+STACK_DEPTH):2*(1+STACK_DEPTH)];
-    if(block_type == 7'h40)
+    if(blockStack_out_returnType == 7'h40)
       stack_op <= `INDEX_RESET;
 
     // TODO Get and check function return types
-    // else if(7'h7f - block_type == data[65:64]) begin
+    // else if(7'h7f - blockStack_out_returnType == data[65:64]) begin
     else if(1) begin
       stack_op   <= `INDEX_RESET_AND_PUSH;
       stack_data <= data;
@@ -188,9 +256,8 @@ module cpu
 
     // Break to outter block, remove inner ones first
     if(depth) begin
-      // TODO can we branch also over `if`'s and to outer functions?
-      call_stack_op   <= `POP;
-      call_stack_data <= depth-1;  // Remove all slices except the desired one
+      blockStack_op   <= `POP;
+      blockStack_data <= depth-1;  // Remove all slices except the desired one
 
       step <= EXEC2;
     end
@@ -201,13 +268,17 @@ module cpu
   endtask
 
   task block_break2;
-    case (call_stack_out[8+2*(1+STACK_DEPTH):7+2*(1+STACK_DEPTH)])
-      `block     : block_return();
-      `block_loop: block_loop_back();
+    if(blockStack_status == `EMPTY)
+      trap <= `CALL_STACK_EMPTY;
 
-      default:
-        trap <= `BAD_BLOCK_TYPE;
-    endcase
+    else
+      case (blockStack_out_type)
+        `block     : block_return();
+        `block_loop: block_loop_back();
+
+        default:
+          trap <= `BAD_BLOCK_TYPE;
+      endcase
   endtask
 
   // Main loop
@@ -216,13 +287,13 @@ module cpu
       trap <= `NONE;
       step <= FETCH;
       PC   <= pc;
-      underflow_limit <= 0;
-      new_index <= 0;
+      stack_underflow <= 0;
+      stack_newIndex <= 0;
     end
 
     else if(!trap) begin
       stack_op <= `NONE;
-      call_stack_op <= `NONE;
+      blockStack_op <= `NONE;
 
       case (step)
         FETCH: begin
@@ -260,37 +331,46 @@ module cpu
 
               `op_block: begin
                 // Store current status on the blocks stack
-                call_stack_op   <= `PUSH;
-                call_stack_data <= {rom_data_PC, `block, leb128_out[6:0],
-                                    stack_index, underflow_limit};
+                blockStack_op   <= `PUSH;
+                // TODO should we use relative addresses for destination?
+                blockStack_data <= {rom_data_PC, `block, leb128_out[6:0],
+                                    stack_index, stack_underflow};
 
                 // Set an empty stack for the called block
-                underflow_limit <= stack_index;
+                stack_underflow <= stack_index;
 
                 PC <= PC+5;
               end
 
               `op_end: begin
-                // Returning from main call (`start`, `export`), return results
-                // and halt
-                if(call_stack_status == `EMPTY)
+                // Main call (`start`, `export`), return results and halt
+                if(callStack_status == `EMPTY)
                   trap <= `ENDED;
 
-                // Returning from a function call, or end of a block
+                // Function
+                else if(blockStack_status == `EMPTY)
+                  call_return();
+
+                // Block or if
                 else
                   block_return();
               end
 
               `op_br: begin
-                if(stack_status == `EMPTY)
-                  trap <= `STACK_EMPTY;
+                // TODO break functions
+                if(blockStack_status == `EMPTY)
+                  trap <= `BLOCK_STACK_EMPTY;
 
                 else
                   block_break(leb128_out);
               end
 
               `op_br_if: begin
-                if(stack_status == `EMPTY)
+                // TODO break functions
+                if(blockStack_status == `EMPTY)
+                  trap <= `BLOCK_STACK_EMPTY;
+
+                else if(stack_status == `EMPTY)
                   trap <= `STACK_EMPTY;
 
                 else if(stack_out[65:64] != `i32)
@@ -302,12 +382,12 @@ module cpu
 
               `op_return: begin
                 // Returning from main call (`start`, `export`), return results and halt
-                if(call_stack_status == `EMPTY)
+                if(callStack_status == `EMPTY)
                   trap <= `ENDED;
 
                 // Returning from a function call
                 else
-                  block_return();
+                  call_return();
               end
 
               // Call operators
@@ -315,18 +395,22 @@ module cpu
                 rom_addr  <= leb128_out;  //1+leb128_out;
                 rom_extra <= 10;  // 5
 
-                // Store current return status on the call stack
-                call_stack_op   <= `PUSH;
+                // Store block stack index on the call stack
+                callStack_op   <= `PUSH;
+                callStack_data <= blockStack_index;
+
+                // Store current return status on the block stack
+                blockStack_op   <= `PUSH;
                 // TODO Spec says "A direct call to a function with a mismatched
                 //      signature is a module verification error". Should return
                 //       value be verified, or it's already done at loading?
                 // TODO get function return value
                 // TODO substract function arguments
-                call_stack_data <= {PC+leb128_len, `block_function, 7'b0,
-                                    stack_index-8'b0, underflow_limit};
+                blockStack_data <= {PC+leb128_len, `block_function, 7'b0,
+                                    stack_index-8'b0, stack_underflow};
 
                 // Set an empty stack for the called function
-                underflow_limit <= stack_index;
+                stack_underflow <= stack_index;
 
                 step <= EXEC2;
               end
@@ -474,7 +558,7 @@ module cpu
             // Control flow operators
             `op_br,
             `op_br_if: begin
-              if(call_stack_status > `EMPTY)
+              if(blockStack_status > `EMPTY)
                 trap <= `CALL_STACK_ERROR;
 
               else

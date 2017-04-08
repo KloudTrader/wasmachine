@@ -5,19 +5,21 @@
 `define f64 2'b11
 
 // Traps
-`define NONE             0
-`define STACK_EMPTY      1
-`define STACK_ERROR      2
-`define ROM_ERROR        3
-`define UNREACHABLE      4
-`define CALL_STACK_EMPTY 5
-`define CALL_STACK_ERROR 6
-`define BAD_BLOCK_TYPE   7
-`define TYPE_MISMATCH    8
-`define UNKOWN_OPCODE    9
-`define TYPES_MISMATCH   10
-//`define BAD_LABEL        11
-`define ENDED            15
+`define NONE              0
+`define ENDED             1
+`define STACK_EMPTY       2
+`define STACK_ERROR       3
+`define BLOCK_STACK_EMPTY 4
+`define BLOCK_STACK_ERROR 5
+`define CALL_STACK_EMPTY  6
+`define CALL_STACK_ERROR  7
+`define ROM_ERROR         8
+`define UNREACHABLE       9
+`define BAD_BLOCK_TYPE    10
+`define TYPE_MISMATCH     11
+`define UNKOWN_OPCODE     12
+`define TYPES_MISMATCH    13
+//`define BAD_LABEL         14
 
 // blocks
 `define block          2'h0
