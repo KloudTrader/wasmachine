@@ -252,8 +252,6 @@ module cpu
   task block_break;
     input [31:0] depth;
 
-    // TODO control we don't break out a function slice
-
     // Break to outter block, remove inner ones first
     if(depth) begin
       blockStack_op   <= `POP;
@@ -268,8 +266,13 @@ module cpu
   endtask
 
   task block_break2;
-    if(blockStack_status == `EMPTY)
-      trap <= `CALL_STACK_EMPTY;
+    if(blockStack_status == `EMPTY) begin
+      if(callStack_status == `EMPTY)
+        trap <= `CALL_STACK_EMPTY;
+
+      else
+        call_return();
+    end
 
     else
       case (blockStack_out_type)
@@ -357,9 +360,16 @@ module cpu
               end
 
               `op_br: begin
-                // TODO break functions
-                if(blockStack_status == `EMPTY)
-                  trap <= `BLOCK_STACK_EMPTY;
+                if(blockStack_status == `EMPTY) begin
+                  if(leb128_out)
+                    trap <= `BLOCK_STACK_EMPTY;
+
+                  else if(callStack_status == `EMPTY)
+                    trap <= `CALL_STACK_EMPTY;
+
+                  else
+                    block_return();
+                end
 
                 else
                   block_break(leb128_out);
