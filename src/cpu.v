@@ -83,7 +83,7 @@ module cpu
   localparam BLOCK_STACK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
   localparam BLOCK_STACK_DEPTH = 3;
 
-  reg  [                  2:0] blockStack_op;
+  reg  [                  1:0] blockStack_op;
   reg  [BLOCK_STACK_WIDTH-1:0] blockStack_data;
   reg  [BLOCK_STACK_DEPTH  :0] blockStack_underflow = 0;
   reg  [BLOCK_STACK_DEPTH  :0] blockStack_newIndex = 0;
@@ -91,7 +91,7 @@ module cpu
   wire [BLOCK_STACK_WIDTH-1:0] blockStack_out;
   wire [                  2:0] blockStack_status;
 
-  SuperStack #(
+  LimitedStack #(
     .WIDTH(BLOCK_STACK_WIDTH),
     .DEPTH(BLOCK_STACK_DEPTH)
   )
@@ -295,8 +295,9 @@ module cpu
     end
 
     else if(!trap) begin
-      stack_op <= `NONE;
+      stack_op      <= `NONE;
       blockStack_op <= `NONE;
+      callStack_op  <= `NONE;
 
       case (step)
         FETCH: begin
