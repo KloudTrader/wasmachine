@@ -224,22 +224,36 @@ module SuperStack_tb();
     `assert(out   , 8'h0b);
     `assert(index , 1);
 
-    // Underfow get
-    offset <= 0;
-    op <= `UNDERFLOW_GET;
-    #2
-    `assert(status, `NONE);
-    `assert(out   , 8'h0b);
-    `assert(index , 1);
-
     // Underfow set
     offset <= 0;
     op <= `UNDERFLOW_SET;
     data <= 12;
     #2
     `assert(status, `NONE);
+    `assert(out   , 8'h0b);
+    `assert(out1  , 8'h0c);
+    `assert(index , 2);
+
+    op <= `NONE;
+    #2
+    `assert(status, `NONE);
+    `assert(out   , 8'h0b);
+    `assert(out1  , 8'h0c);
+    `assert(index , 2);
+
+    // Underfow get
+    underflow_limit <= 1;
+    offset <= 0;
+    op <= `UNDERFLOW_GET;
+    #2
+    `assert(status, `NONE);
     `assert(out   , 8'h0c);
-    `assert(index , 1);
+
+    underflow_limit <= 1;
+    offset <= 1;
+    op <= `UNDERFLOW_GET;
+    #2
+    `assert(status, `BAD_OFFSET);
 
     $finish;
   end

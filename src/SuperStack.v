@@ -20,7 +20,7 @@ module SuperStack
   input                  clk,
   input                  reset,
   input wire [      2:0] op,              // none / push / pop / replace /
-                                          // underflow_reset / underflow_push /
+                                          // index_reset / index_push /
                                           // underflow_get / underflow_set
   input      [WIDTH-1:0] data,            // Data to be inserted on the stack
   input      [DEPTH  :0] offset,          // position of getter/setter
@@ -70,8 +70,11 @@ module SuperStack
 
         `PUSH:
         begin
+          // Stack is full
           if (index == MAX_STACK)
             status <= `OVERFLOW;
+
+          // Push data to ToS
           else begin
             stack[index] = data;
 
@@ -139,7 +142,7 @@ module SuperStack
 
         `UNDERFLOW_GET:
         begin
-          if (index <= offset)
+          if (underflow_limit <= offset)
             status <= `BAD_OFFSET;
 
           else begin
@@ -150,32 +153,36 @@ module SuperStack
 
         `UNDERFLOW_SET:
         begin
-          if (offset < index) begin
-            stack[offset] = data;
-
-            if(offset < index-1)
-              status <= `NONE;
-
-            // Update out if we are modifying ToS
-            else
-              setOutput();
-          end
-
           // Setting over current index
-          else if (index < offset)
+          if (underflow_limit < offset)
             status <= `BAD_OFFSET;
 
+          // offset is lower than underflow limit, just update value
+          else if (offset < underflow_limit) begin
+            stack[offset] = data;
+
+            status <= `NONE;
+          end
+
           // Stack is full
-          else if (offset == MAX_STACK)
+          else if (index == MAX_STACK)
             status <= `OVERFLOW;
 
-          // Push to ToS
+          // offset is equal to underflow limit, increase space first
           else begin
-            stack[offset] = data;
+            // http://stackoverflow.com/questions/15579020/shifting-2d-array-verilog
+            reg[DEPTH:0] i;
+            for(i = index; i > offset; i=i-i)
+              stack[i] <= stack[i-1];
+            stack[offset] <= data;
+
+            out  <= stack[index-1];
+            out1 <= data;
+            out2 <= stack[index-2];
 
             index = index + 1;
 
-            setOutput();
+            status <= getStatus(index);
           end
         end
       endcase
