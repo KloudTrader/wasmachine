@@ -9,9 +9,10 @@ DEPS = $(SRC)/genrom.v $(SRC)/$(NAME).v
 VENDOR_DEPS = -y vendor/fpu/double_to_float \
 							-y vendor/fpu/float_to_double \
 							-y vendor/LEB128
+
 IVERILOG = iverilog -g2005-sv -I $(SRC) -y $(SRC) $(VENDOR_DEPS)
+GTKWAVE  = gtkwave
 VVP      = vvp -N
-GTKWAVE  = gtkwave -r gtkwaverc
 
 RED=\033[0;31m
 GREEN=\033[0;32m
