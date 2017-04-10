@@ -23,10 +23,9 @@ module SuperStack
                                           // index_reset / index_push /
                                           // underflow_get / underflow_set
   input      [WIDTH-1:0] data,            // Data to be inserted on the stack
-  input      [DEPTH  :0] offset,          // position of getter/setter
   input      [DEPTH  :0] underflow_limit, // Depth of underflow error
   input      [DEPTH  :0] base_limit,      // Depth of nderflow get/set limit
-  input      [DEPTH  :0] new_index,       // New index
+  input      [DEPTH  :0] offset,          // position of getter/setter/new index
   output reg [DEPTH  :0] index = 0,       // Current top of stack position
   output reg [WIDTH-1:0] out,             // top of stack, or output of getter
   output reg [WIDTH-1:0] out1,
@@ -110,12 +109,12 @@ module SuperStack
         `INDEX_RESET:
         begin
           // New index is greater than current one
-          if (index < new_index)
+          if (index < offset)
             status <= `BAD_INDEX;
 
           // New index is equal or lower than current one
           else begin
-            index = new_index;
+            index = offset;
 
             status <= getStatus(index);
           end
@@ -124,18 +123,18 @@ module SuperStack
         `INDEX_RESET_AND_PUSH:
         begin
           // New index is greater than current one
-          if (index < new_index)
+          if (index < offset)
             status <= `BAD_INDEX;
 
           // Both index and new index are equal to MAX_STACK
-          else if (new_index == MAX_STACK)
+          else if (offset == MAX_STACK)
             status <= `OVERFLOW;
 
           // New index is equal or lower than current index
           else begin
-            stack[new_index] = data;
+            stack[offset] = data;
 
-            index = new_index+1;
+            index = offset+1;
 
             setOutput();
           end
