@@ -25,6 +25,7 @@ module SuperStack
   input      [WIDTH-1:0] data,            // Data to be inserted on the stack
   input      [DEPTH  :0] offset,          // position of getter/setter
   input      [DEPTH  :0] underflow_limit, // Depth of underflow error
+  input      [DEPTH  :0] base_limit,      // Depth of nderflow get/set limit
   input      [DEPTH  :0] new_index,       // New index
   output reg [DEPTH  :0] index = 0,       // Current top of stack position
   output reg [WIDTH-1:0] out,             // top of stack, or output of getter
@@ -142,47 +143,23 @@ module SuperStack
 
         `UNDERFLOW_GET:
         begin
-          if (underflow_limit <= offset)
+          if (underflow_limit - base_limit <= offset)
             status <= `BAD_OFFSET;
 
           else begin
-            out <= stack[offset];
+            out <= stack[underflow_limit-1 - offset];
             status <= `NONE;
           end
         end
 
         `UNDERFLOW_SET:
         begin
-          // Setting over current index
-          if (underflow_limit < offset)
+          if (underflow_limit - base_limit <= offset)
             status <= `BAD_OFFSET;
 
-          // offset is lower than underflow limit, just update value
-          else if (offset < underflow_limit) begin
-            stack[offset] = data;
-
-            status <= `NONE;
-          end
-
-          // Stack is full
-          else if (index == MAX_STACK)
-            status <= `OVERFLOW;
-
-          // offset is equal to underflow limit, increase space first
           else begin
-            // http://stackoverflow.com/questions/15579020/shifting-2d-array-verilog
-            reg[DEPTH:0] i;
-            for(i = index; i > offset; i=i-i)
-              stack[i] <= stack[i-1];
-            stack[offset] <= data;
-
-            out  <= stack[index-1];
-            out1 <= data;
-            out2 <= stack[index-2];
-
-            index = index + 1;
-
-            status <= getStatus(index);
+            stack[underflow_limit-1 - offset] = data;
+            status <= `NONE;
           end
         end
       endcase

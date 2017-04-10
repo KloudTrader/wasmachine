@@ -14,8 +14,8 @@ module SuperStack_tb();
   reg              reset;
   reg  [      2:0] op;
   reg  [WIDTH-1:0] data;
-  reg  [DEPTH  :0] offset;
   reg  [DEPTH  :0] underflow_limit=0;
+  reg  [DEPTH  :0] offset;
   reg  [DEPTH  :0] new_index;
   wire [DEPTH  :0] index;
   wire [WIDTH-1:0] out;
@@ -32,8 +32,9 @@ module SuperStack_tb();
     .reset(reset),
     .op(op),
     .data(data),
-    .offset(offset),
     .underflow_limit(underflow_limit),
+    .base_limit(2'b0),
+    .offset(offset),
     .new_index(new_index),
     .index(index),
     .out(out),
@@ -207,49 +208,52 @@ module SuperStack_tb();
     `assert(index , 0);
 
     // Underflow reset push
-    underflow_limit <= 2;
     op <= `INDEX_RESET_AND_PUSH;
-    data <= 10;
+    data            <= 10;
+    underflow_limit <= 2;
     new_index <= 0;
     #2
     `assert(status, `UNDERFLOW);
     `assert(out   , 8'h0a);
     `assert(index , 1);
 
-    underflow_limit <= 0;
     op <= `INDEX_RESET_AND_PUSH;
-    data <= 11;
+    data            <= 11;
+    underflow_limit <= 0;
     #2
     `assert(status, `NONE);
     `assert(out   , 8'h0b);
     `assert(index , 1);
 
     // Underfow set
-    offset <= 0;
     op <= `UNDERFLOW_SET;
-    data <= 12;
+    data            <= 12;
+    underflow_limit <= 1;
+    offset          <= 0;
     #2
     `assert(status, `NONE);
     `assert(out   , 8'h0b);
-    `assert(out1  , 8'h0c);
-    `assert(index , 2);
+    `assert(index , 1);
 
     op <= `NONE;
     #2
+    `assert(status, `EMPTY);
+    `assert(index , 1);
+
+    op   <= `PUSH;
+    data <= 13;
+    #2
     `assert(status, `NONE);
-    `assert(out   , 8'h0b);
-    `assert(out1  , 8'h0c);
+    `assert(out   , 8'h0d);
     `assert(index , 2);
 
     // Underfow get
-    underflow_limit <= 1;
     offset <= 0;
     op <= `UNDERFLOW_GET;
     #2
     `assert(status, `NONE);
     `assert(out   , 8'h0c);
 
-    underflow_limit <= 1;
     offset <= 1;
     op <= `UNDERFLOW_GET;
     #2
