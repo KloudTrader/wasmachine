@@ -4,7 +4,7 @@ SRC   = src
 BUILD = build
 
 NAME = wasmachine
-DEPS = $(SRC)/dividerp1.v $(SRC)/genrom.v $(SRC)/$(NAME).v
+DEPS = $(SRC)/genrom.v $(SRC)/$(NAME).v
 
 VENDOR_DEPS = -y vendor/fpu/double_to_float \
 							-y vendor/fpu/float_to_double \
