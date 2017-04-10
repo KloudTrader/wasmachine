@@ -53,8 +53,10 @@ module cpu
 
   reg  [            2:0] stack_op;
   reg  [STACK_WIDTH-1:0] stack_data;
+  reg  [STACK_DEPTH  :0] stack_offset;
   reg  [STACK_DEPTH  :0] stack_underflow = 0;
-  reg  [STACK_DEPTH  :0] stack_newIndex = 0;
+  reg  [STACK_DEPTH  :0] stack_upper = 0;
+  reg  [STACK_DEPTH  :0] stack_lower = 0;
   wire [STACK_DEPTH  :0] stack_index;
   wire [STACK_WIDTH-1:0] stack_out;
   wire [STACK_WIDTH-1:0] stack_out1;
@@ -70,8 +72,10 @@ module cpu
     .reset(reset),
     .op(stack_op),
     .data(stack_data),
+    .offset(stack_offset),
     .underflow_limit(stack_underflow),
-    .new_index(stack_newIndex),
+    .upper_limit(stack_upper),
+    .lower_limit(stack_lower),
     .index(stack_index),
     .out(stack_out),
     .out1(stack_out1),
@@ -80,18 +84,21 @@ module cpu
   );
 
   // Block stack
-  localparam BLOCK_STACK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
+  localparam BLOCK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
+
+  localparam BLOCK_STACK_WIDTH = (STACK_WIDTH > BLOCK_WIDTH) ? STACK_WIDTH : BLOCK_WIDTH;
   localparam BLOCK_STACK_DEPTH = 3;
 
-  reg  [                  1:0] blockStack_op;
+  reg  [                  2:0] blockStack_op;
   reg  [BLOCK_STACK_WIDTH-1:0] blockStack_data;
+  reg  [BLOCK_STACK_DEPTH  :0] blockStack_offset;
   reg  [BLOCK_STACK_DEPTH  :0] blockStack_underflow = 0;
-  reg  [BLOCK_STACK_DEPTH  :0] blockStack_newIndex = 0;
+  reg  [BLOCK_STACK_DEPTH  :0] blockStack_lower = 0;
   wire [BLOCK_STACK_DEPTH  :0] blockStack_index;
   wire [BLOCK_STACK_WIDTH-1:0] blockStack_out;
   wire [                  2:0] blockStack_status;
 
-  LimitedStack #(
+  SuperStack #(
     .WIDTH(BLOCK_STACK_WIDTH),
     .DEPTH(BLOCK_STACK_DEPTH)
   )
@@ -100,14 +107,17 @@ module cpu
     .reset(reset),
     .op(blockStack_op),
     .data(blockStack_data),
-    .new_index(blockStack_newIndex),
+    .offset(blockStack_offset),
+    .underflow_limit(blockStack_underflow),
+    .upper_limit(blockStack_underflow),
+    .lower_limit(blockStack_lower),
     .index(blockStack_index),
     .out(blockStack_out),
     .status(blockStack_status)
   );
 
   // Call stack
-  localparam CALL_STACK_WIDTH = ROM_ADDR + 7 + 2*(BLOCK_STACK_DEPTH+1) + 2*(STACK_DEPTH+1);
+  localparam CALL_STACK_WIDTH = ROM_ADDR + 7 + 3*(BLOCK_STACK_DEPTH+1) + 4*(STACK_DEPTH+1);
   localparam CALL_STACK_DEPTH = 1;
 
   reg  [                 1:0] callStack_op;
@@ -163,18 +173,23 @@ module cpu
 
   wire[31:0] rom_data_PC = rom_data[71:40];
 
+  // Block stack
   wire[ ROM_ADDR-1:0] blockStack_out_PC         = blockStack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH)  :9+2*(1+STACK_DEPTH)];
   wire[          1:0] blockStack_out_type       = blockStack_out[           8+2*(1+STACK_DEPTH)  :7+2*(1+STACK_DEPTH)];
   wire[          6:0] blockStack_out_returnType = blockStack_out[           6+2*(1+STACK_DEPTH)  :  2*(1+STACK_DEPTH)];
   wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[             2*(1+STACK_DEPTH)-1:     1+STACK_DEPTH ];
   wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[                  STACK_DEPTH   :                  0];
 
-  wire[ ROM_ADDR-1:0] callStack_out_PC             = callStack_out[ROM_ADDR-1+7+2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)  :7+2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)];
-  wire[          6:0] callStack_out_returnType     = callStack_out[           6+2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)  :  2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)];
-  wire[STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[             2*(BLOCK_STACK_DEPTH+1)+2*(STACK_DEPTH+1)-1:     BLOCK_STACK_DEPTH+1 +2*(STACK_DEPTH+1)];
-  wire[STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[                BLOCK_STACK_DEPTH+1 +2*(STACK_DEPTH+1)-1:                          2*(1+STACK_DEPTH)];
-  wire[STACK_DEPTH:0] callStack_out_index          = callStack_out[                                     2*(1+STACK_DEPTH)-1:                             1+STACK_DEPTH ];
-  wire[STACK_DEPTH:0] callStack_out_underflow      = callStack_out[                                          STACK_DEPTH   :                                          0];
+  // Call stack
+  wire[       ROM_ADDR-1:0] callStack_out_PC             = callStack_out[ROM_ADDR-1+7+3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :7+3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
+  wire[                6:0] callStack_out_returnType     = callStack_out[           6+3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :  3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
+  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[             3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)-1:  2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
+  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[             2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)-1:     BLOCK_STACK_DEPTH+1 +4*(1+STACK_DEPTH)];
+  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockLower     = callStack_out[                BLOCK_STACK_DEPTH+1 +4*(STACK_DEPTH+1)-1:                          4*(1+STACK_DEPTH)];
+  wire[      STACK_DEPTH:0] callStack_out_index          = callStack_out[                                     4*(1+STACK_DEPTH)-1:                          3*(1+STACK_DEPTH)];
+  wire[      STACK_DEPTH:0] callStack_out_underflow      = callStack_out[                                     3*(1+STACK_DEPTH)-1:                          2*(1+STACK_DEPTH)];
+  wire[      STACK_DEPTH:0] callStack_out_upper          = callStack_out[                                     2*(1+STACK_DEPTH)-1:                             1+STACK_DEPTH ];
+  wire[      STACK_DEPTH:0] callStack_out_lower          = callStack_out[                                          STACK_DEPTH   :                                          0];
 
   // CPU internal status
   localparam FETCH  = 3'b000;
@@ -198,12 +213,12 @@ module cpu
     callStack_op   <= `POP;
     callStack_data <= 0;
 
-    blockStack_newIndex  <= callStack_out_blockIndex;
+    blockStack_offset    <= callStack_out_blockIndex;
     blockStack_underflow <= callStack_out_blockUnderflow;
     blockStack_op        <= `INDEX_RESET;
 
-    stack_newIndex  <= blockStack_out_index;
-    stack_underflow <= blockStack_out_underflow;
+    stack_offset    <= callStack_out_index;
+    stack_underflow <= callStack_out_underflow;
 
     // Check type and set result value
     if(callStack_out_returnType == 7'h40)
@@ -231,7 +246,7 @@ module cpu
     blockStack_op   <= `POP;
     blockStack_data <= 0;
 
-    stack_newIndex  <= blockStack_out_index;
+    stack_offset    <= blockStack_out_index;
     stack_underflow <= blockStack_out_underflow;
 
     // Check type and set result value
@@ -290,8 +305,12 @@ module cpu
       trap <= `NONE;
       step <= FETCH;
       PC   <= pc;
+
+      blockStack_offset    <= 0;
+      blockStack_underflow <= 0;
+
+      stack_offset    <= 0;
       stack_underflow <= 0;
-      stack_newIndex <= 0;
     end
 
     else if(!trap) begin
