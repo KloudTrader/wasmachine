@@ -36,6 +36,7 @@ module SuperStack_tb();
     .underflow_limit(underflow_limit),
     .upper_limit(upper_limit),
     .lower_limit(2'b0),
+    .dropTos(1'b0),
     .index(index),
     .out(out),
     .out1(out1),
@@ -237,7 +238,7 @@ module SuperStack_tb();
 
     upper_limit <= 1;
     #2
-    `assert(status, `NONE);
+    `assert(status, `EMPTY);
     `assert(out   , 8'h0b);
     `assert(index , 1);
 

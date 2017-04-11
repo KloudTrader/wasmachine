@@ -27,6 +27,7 @@ module SuperStack
   input      [DEPTH  :0] underflow_limit, // Depth of underflow error
   input      [DEPTH  :0] upper_limit,     // Underflow get/set upper limit
   input      [DEPTH  :0] lower_limit,     // Underflow get/set lower limit
+  input                  dropTos,
   output reg [DEPTH  :0] index = 0,       // Current top of stack position
   output reg [WIDTH-1:0] out,             // top of stack, or output of getter
   output reg [WIDTH-1:0] out1,
@@ -157,9 +158,15 @@ module SuperStack
           if (upper_limit - lower_limit <= offset)
             status <= `BAD_OFFSET;
 
+          else if(dropTos && index == underflow_limit)
+            status <= `UNDERFLOW;
+
           else begin
             stack[lower_limit + offset] = data;
-            status <= `NONE;
+
+            if(dropTos) index = index - 1;
+
+            status <= getStatus(index);
           end
         end
       endcase
