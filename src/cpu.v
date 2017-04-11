@@ -117,7 +117,8 @@ module cpu
   );
 
   // Call stack
-  localparam CALL_STACK_WIDTH = ROM_ADDR + 7 + 3*(BLOCK_STACK_DEPTH+1) + 4*(STACK_DEPTH+1);
+  localparam CALL_STACK_WIDTH = ROM_ADDR + 7 + 2*(BLOCK_STACK_DEPTH+1) +
+                                               4*(STACK_DEPTH+1);
   localparam CALL_STACK_DEPTH = 1;
 
   reg  [                 1:0] callStack_op;
@@ -181,11 +182,10 @@ module cpu
   wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[                  STACK_DEPTH   :                  0];
 
   // Call stack
-  wire[       ROM_ADDR-1:0] callStack_out_PC             = callStack_out[ROM_ADDR-1+7+3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :7+3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
-  wire[                6:0] callStack_out_returnType     = callStack_out[           6+3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :  3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
-  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[             3*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)-1:  2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
-  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[             2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)-1:     BLOCK_STACK_DEPTH+1 +4*(1+STACK_DEPTH)];
-  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockLower     = callStack_out[                BLOCK_STACK_DEPTH+1 +4*(STACK_DEPTH+1)-1:                          4*(1+STACK_DEPTH)];
+  wire[       ROM_ADDR-1:0] callStack_out_PC             = callStack_out[ROM_ADDR-1+7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
+  wire[                6:0] callStack_out_returnType     = callStack_out[           6+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :  2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
+  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[             2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)-1:     BLOCK_STACK_DEPTH+1 +4*(STACK_DEPTH+1)];
+  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[                BLOCK_STACK_DEPTH+1 +4*(STACK_DEPTH+1)-1:                          4*(1+STACK_DEPTH)];
   wire[      STACK_DEPTH:0] callStack_out_index          = callStack_out[                                     4*(1+STACK_DEPTH)-1:                          3*(1+STACK_DEPTH)];
   wire[      STACK_DEPTH:0] callStack_out_underflow      = callStack_out[                                     3*(1+STACK_DEPTH)-1:                          2*(1+STACK_DEPTH)];
   wire[      STACK_DEPTH:0] callStack_out_upper          = callStack_out[                                     2*(1+STACK_DEPTH)-1:                             1+STACK_DEPTH ];
@@ -427,20 +427,19 @@ module cpu
 
                 // Store block stack index on the call stack
                 callStack_op   <= `PUSH;
-                callStack_data <= blockStack_index;
-
-                // Store current return status on the block stack
-                blockStack_op   <= `PUSH;
                 // TODO Spec says "A direct call to a function with a mismatched
                 //      signature is a module verification error". Should return
                 //       value be verified, or it's already done at loading?
                 // TODO get function return value
                 // TODO substract function arguments
-                blockStack_data <= {PC+leb128_len, `block_function, 7'b0,
-                                    stack_index-8'b0, stack_underflow};
+                callStack_data <= {PC+leb128_len, 7'b0, blockStack_index,
+                                   blockStack_underflow, stack_index,
+                                   stack_underflow, stack_upper,
+                                   stack_lower-8'b0};
 
-                // Set an empty stack for the called function
-                stack_underflow <= stack_index;
+                // Set empty stacks for the called function
+                blockStack_underflow <= blockStack_index;
+                stack_underflow      <= stack_index;
 
                 step <= EXEC2;
               end
