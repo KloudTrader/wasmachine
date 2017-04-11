@@ -19,6 +19,7 @@
 `define op_select 8'h1b
 
 // Variable access
+`define op_get_local  8'h20
 
 // Memory-related operators
 

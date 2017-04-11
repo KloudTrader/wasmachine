@@ -68,9 +68,10 @@ view/%: test/%
 
 # cpu
 test/cpu: test/cpu/control_flow_operators test/cpu/call_operators \
-					test/cpu/parametric_operators test/cpu/constants \
-					test/cpu/comparison_operators test/cpu/numeric_operators \
-					test/cpu/conversions test/cpu/reinterpretations
+					test/cpu/parametric_operators test/cpu/variable_access \
+					test/cpu/constants test/cpu/comparison_operators \
+					test/cpu/numeric_operators test/cpu/conversions \
+					test/cpu/reinterpretations
 
 test/cpu/control_flow_operators: test/cpu/block test/cpu/br test/cpu/br_if \
 																 test/cpu/return
@@ -90,6 +91,9 @@ test/cpu/select : test/cpu/select1 test/cpu/select2 test/cpu/select3
 test/cpu/select1: $(BUILD)/cpu/select1_tb.vcd
 test/cpu/select2: $(BUILD)/cpu/select2_tb.vcd
 test/cpu/select3: $(BUILD)/cpu/select3_tb.vcd
+
+test/cpu/variable_access: test/cpu/get_local
+test/cpu/get_local: $(BUILD)/cpu/get_local_tb.vcd
 
 test/cpu/constants: test/cpu/f32.const test/cpu/f64.const test/cpu/i32.const \
 	                  test/cpu/i64.const

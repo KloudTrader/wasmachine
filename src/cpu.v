@@ -451,6 +451,13 @@ module cpu
               end
 
               // Variable access
+              `op_get_local: begin
+                stack_op     <= `UNDERFLOW_GET;
+                stack_offset <= leb128_out;
+
+                PC <= PC+leb128_len;
+                step <= EXEC2;
+              end
 
               // Memory-related operators
 
@@ -606,6 +613,12 @@ module cpu
               stack_aux2 <= stack_out;
 
               step <= EXEC4;
+            end
+
+            // Variable access
+            `op_get_local: begin
+              stack_op <= `PUSH;
+              stack_data <= stack_out;
             end
 
             // Comparison operators

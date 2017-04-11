@@ -1,0 +1,14 @@
+// Functions index
+02  // 2 functions
+03  // function 0
+06  // function 1
+
+// function 0
+20 00  // get_local 0
+0b     // end
+
+// function 1
+42 01  // i64.const 1
+10 00  // call 0
+7c     // i64.add
+0b     // end
