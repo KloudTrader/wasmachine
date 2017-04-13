@@ -160,19 +160,25 @@ module cpu
     .clk(clk),
     .rst(reset),
     .input_a_ack(double_to_float_a_ack),
-    .input_a(stack_out[63:0]),
+    .input_a(stack_out_64),
     .input_a_stb(double_to_float_a_stb),
     .output_z(double_to_float_z),
     .output_z_stb(double_to_float_z_stb),
     .output_z_ack(double_to_float_z_ack)
   );
 
+  //
   // Continuous assignments & wire aliases
-  assign result       = stack_out[63: 0];
-  assign result_type  = stack_out[65:64];
+  //
+
+  // Result output
+  assign result       = stack_out_64;
+  assign result_type  = stack_out_type;
   assign result_empty = stack_status == `EMPTY;
 
   // ROM
+  wire[ 7:0] rom_data_opcode = rom_data[87:80];
+
   wire[31:0] rom_data_PC = rom_data[71:40];
 
   wire[31:0] rom_data_functionAddress = rom_data[193:72];
@@ -180,12 +186,25 @@ module cpu
   wire[31:0] rom_data_arguments       = rom_data[ 63:32];
   wire[31:0] rom_data_localEntries    = rom_data[ 31: 0];
 
+  // Stack
+  wire[ 1:0] stack_out_type = stack_out[65:64];
+  wire[63:0] stack_out_64   = stack_out[63:0];
+  wire[31:0] stack_out_32   = stack_out[31:0];
+
   // Block stack
   wire[ ROM_ADDR-1:0] blockStack_out_PC         = blockStack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH)  :9+2*(1+STACK_DEPTH)];
   wire[          1:0] blockStack_out_type       = blockStack_out[           8+2*(1+STACK_DEPTH)  :7+2*(1+STACK_DEPTH)];
   wire[          6:0] blockStack_out_returnType = blockStack_out[           6+2*(1+STACK_DEPTH)  :  2*(1+STACK_DEPTH)];
   wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[             2*(1+STACK_DEPTH)-1:     1+STACK_DEPTH ];
   wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[                  STACK_DEPTH   :                  0];
+
+  wire[ 1:0] blockStack_data_valueType = blockStack_data[65:64];
+  wire[63:0] blockStack_data_value_64  = blockStack_data[63: 0];
+  wire[31:0] blockStack_data_value_32  = blockStack_data[31: 0];
+
+  wire[ 1:0] blockStack_out_valueType = blockStack_out[65:64];
+  wire[63:0] blockStack_out_value_64  = blockStack_out[63: 0];
+  wire[31:0] blockStack_out_value_32  = blockStack_out[31: 0];
 
   // Call stack
   wire[       ROM_ADDR-1:0] callStack_out_PC             = callStack_out[ROM_ADDR-1+7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
@@ -197,7 +216,9 @@ module cpu
   wire[      STACK_DEPTH:0] callStack_out_upper          = callStack_out[                                     2*(1+STACK_DEPTH)-1:                             1+STACK_DEPTH ];
   wire[      STACK_DEPTH:0] callStack_out_lower          = callStack_out[                                          STACK_DEPTH   :                                          0];
 
+  //
   // CPU internal status
+  //
   localparam FETCH  = 3'b000;
   localparam FETCH2 = 3'b001;
   localparam EXEC   = 3'b010;
@@ -243,7 +264,7 @@ module cpu
   endtask
 
   task block_return;
-    reg [65:0] data;
+    reg [STACK_WIDTH-1:0] data;
     data = (opcode == `op_br_if) ? stack_out1 : stack_out;
 
     // Set program counter to next instruction after block
@@ -349,7 +370,7 @@ module cpu
           else begin
             step <= FETCH;
 
-            opcode = rom_data[87:80];
+            opcode = rom_data_opcode;
 
             // Operations
             case (opcode)
@@ -412,7 +433,7 @@ module cpu
                 else if(stack_status == `EMPTY)
                   trap <= `STACK_EMPTY;
 
-                else if(stack_out[65:64] != `i32)
+                else if(result_type != `i32)
                   trap <= `TYPE_MISMATCH;
 
                 else if(stack_out[31:0])
@@ -489,22 +510,22 @@ module cpu
 
               // Comparison operators
               `op_i32_eqz: begin
-                if(stack_out[65:64] != `i32)
+                if(result_type != `i32)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
                   stack_op <= `REPLACE;
-                  stack_data <= {`i32, 32'b0, stack_out[31:0] ? 32'b0 : 32'b1};
+                  stack_data <= {`i32, 32'b0, stack_out_32 ? 32'b0 : 32'b1};
                 end
               end
 
               `op_i64_eqz: begin
-                if(stack_out[65:64] != `i64)
+                if(result_type != `i64)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
                   stack_op <= `REPLACE;
-                  stack_data <= {`i64, stack_out[63:0] ? 64'b0 : 64'b1};
+                  stack_data <= {`i64, stack_out_64 ? 64'b0 : 64'b1};
                 end
               end
 
@@ -515,7 +536,7 @@ module cpu
                 double_to_float_a_stb <= 0;
                 double_to_float_z_ack <= 0;
 
-                if(stack_out[65:64] != `f64)
+                if(result_type != `f64)
                   trap <= `TYPE_MISMATCH;
 
                 else if(double_to_float_z_stb) begin
@@ -536,12 +557,12 @@ module cpu
 
               // Reinterpretations
               `op_i32_reinterpret_f32: begin
-                if(stack_out[65:64] != `i32)
+                if(result_type != `i32)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
                   stack_op <= `REPLACE;
-                  stack_data <= {`f32, stack_out[63:0]};
+                  stack_data <= {`f32, stack_out_64};
                 end
               end
 
@@ -644,90 +665,90 @@ module cpu
             // Comparison operators
             `op_i32_eq:
             begin
-              if(stack_aux1[65:64] != `i32 || stack_out[65:64] != `i32)
+              if(stack_aux1[65:64] != `i32 || result_type != `i32)
                 trap <= `TYPE_MISMATCH;
 
               else begin
                 stack_op   <= `REPLACE;
-                stack_data <= {`i32, (stack_aux1[31:0] == stack_out[31:0]) ? 64'b1 : 64'b0};
+                stack_data <= {`i32, (stack_aux1[31:0] == stack_out_32) ? 64'b1 : 64'b0};
               end
             end
 
             `op_i32_ne:
             begin
-              if(stack_aux1[65:64] != `i32 || stack_out[65:64] != `i32)
+              if(stack_aux1[65:64] != `i32 || result_type != `i32)
                 trap <= `TYPE_MISMATCH;
 
               else begin
                 stack_op   <= `REPLACE;
-                stack_data <= {`i32, (stack_aux1[31:0] != stack_out[31:0]) ? 64'b1 : 64'b0};
+                stack_data <= {`i32, (stack_aux1[31:0] != stack_out_32) ? 64'b1 : 64'b0};
               end
             end
 
             `op_i64_eq:
             begin
-              if(stack_aux1[65:64] != `i64 || stack_out[65:64] != `i64)
+              if(stack_aux1[65:64] != `i64 || result_type != `i64)
                 trap <= `TYPE_MISMATCH;
 
               else begin
                 stack_op   <= `REPLACE;
-                stack_data <= {`i64, (stack_aux1[63:0] == stack_out[63:0]) ? 64'b1 : 64'b0};
+                stack_data <= {`i64, (stack_aux1[63:0] == stack_out_64) ? 64'b1 : 64'b0};
               end
             end
 
             `op_i64_ne:
             begin
-              if(stack_aux1[65:64] != `i64 || stack_out[65:64] != `i64)
+              if(stack_aux1[65:64] != `i64 || result_type != `i64)
                 trap <= `TYPE_MISMATCH;
 
               else begin
                 stack_op   <= `REPLACE;
-                stack_data <= {`i64, (stack_aux1[63:0] != stack_out[63:0]) ? 64'b1 : 64'b0};
+                stack_data <= {`i64, (stack_aux1[63:0] != stack_out_64) ? 64'b1 : 64'b0};
               end
             end
 
             // Numeric operators
             `op_i32_add:
             begin
-              if(stack_aux1[65:64] != `i32 || stack_out[65:64] != `i32)
+              if(stack_aux1[65:64] != `i32 || result_type != `i32)
                 trap <= `TYPE_MISMATCH;
 
               else begin
                 stack_op   <= `REPLACE;
-                stack_data <= {`i32, stack_aux1[31:0] + stack_out[31:0]};
+                stack_data <= {`i32, stack_aux1[31:0] + stack_out_32};
               end
             end
 
             `op_i32_sub:
             begin
-              if(stack_aux1[65:64] != `i32 || stack_out[65:64] != `i32)
+              if(stack_aux1[65:64] != `i32 || result_type != `i32)
                 trap <= `TYPE_MISMATCH;
 
               else begin
                 stack_op   <= `REPLACE;
-                stack_data <= {`i32, stack_out[31:0] - stack_aux1[31:0]};
+                stack_data <= {`i32, stack_out_32 - stack_aux1[31:0]};
               end
             end
 
             `op_i64_add:
             begin
-              if(stack_aux1[65:64] != `i64 || stack_out[65:64] != `i64)
+              if(stack_aux1[65:64] != `i64 || result_type != `i64)
                 trap <= `TYPE_MISMATCH;
 
               else begin
                 stack_op   <= `REPLACE;
-                stack_data <= {`i64, stack_aux1[63:0] + stack_out[63:0]};
+                stack_data <= {`i64, stack_aux1[63:0] + stack_out_64};
               end
             end
 
             `op_i64_sub:
             begin
-              if(stack_aux1[65:64] != `i64 || stack_out[65:64] != `i64)
+              if(stack_aux1[65:64] != `i64 || result_type != `i64)
                 trap <= `TYPE_MISMATCH;
 
               else begin
                 stack_op   <= `REPLACE;
-                stack_data <= {`i64, stack_out[63:0] - stack_aux1[63:0]};
+                stack_data <= {`i64, stack_out_64 - stack_aux1[63:0]};
               end
             end
           endcase
@@ -740,7 +761,7 @@ module cpu
             // Parametric operators
             `op_select: begin
               // Validate both operators are of the same type
-              if(stack_aux2[65:64] != stack_out[65:64])
+              if(stack_aux2[65:64] != result_type)
                 trap <= `TYPES_MISMATCH;
 
               else begin
