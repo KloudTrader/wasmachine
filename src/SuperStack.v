@@ -39,6 +39,7 @@ module SuperStack
   localparam MAX_STACK = (1 << DEPTH+1) - 1;
 
   reg [WIDTH-1:0] stack [0:MAX_STACK-1];
+  reg [DEPTH  :0] i;
 
   // Adjust status when underflow limit has been changed
   function [2:0] getStatus([DEPTH:0] index);
@@ -110,30 +111,26 @@ module SuperStack
 
         `INDEX_RESET:
         begin
-          // New index is greater than current one
-          if (index < offset)
-            status <= `BAD_OFFSET;
+          // New index is greater than current one, fill with zeroes
+          for(i=index; i < offset; i = i + 1)
+            stack[i] = 0;
 
-          // New index is equal or lower than current one
-          else begin
-            index = offset;
+          index = offset;
 
-            status <= getStatus(index);
-          end
+          setOutput();
         end
 
         `INDEX_RESET_AND_PUSH:
         begin
-          // New index is greater than current one
-          if (index < offset)
-            status <= `BAD_OFFSET;
-
-          // Both index and new index are equal to MAX_STACK
-          else if (offset == MAX_STACK)
+          // New index is equal to MAX_STACK, raise error
+          if (offset == MAX_STACK)
             status <= `OVERFLOW;
 
-          // New index is equal or lower than current index
           else begin
+            // New index is greater than current one, fill with zeroes
+            for(i=index; i < offset; i = i + 1)
+              stack[i] = 0;
+
             stack[offset] = data;
 
             index = offset+1;

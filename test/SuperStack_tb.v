@@ -182,7 +182,7 @@ module SuperStack_tb();
     offset <= 1;
     #2
     `assert(status, `EMPTY);
-    `assert(out   , 8'h09);
+    `assert(out   , 8'h08);
     `assert(index , 1);
 
     // Get underflow error when underflow limit is not zero (data is protected)
@@ -191,7 +191,7 @@ module SuperStack_tb();
     #2
     op <= `NONE;
     `assert(status, `UNDERFLOW);
-    `assert(out   , 8'h09);
+    `assert(out   , 8'h08);
     `assert(index , 1);
 
     // Reset underflow limit, and now we can access the data
