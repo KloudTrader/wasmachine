@@ -172,7 +172,13 @@ module cpu
   assign result_type  = stack_out[65:64];
   assign result_empty = stack_status == `EMPTY;
 
+  // ROM
   wire[31:0] rom_data_PC = rom_data[71:40];
+
+  wire[31:0] rom_data_functionAddress = rom_data[193:72];
+  wire[ 6:0] rom_data_returnType      = rom_data[ 70:64];  // High bit dropped
+  wire[31:0] rom_data_arguments       = rom_data[ 63:32];
+  wire[31:0] rom_data_localEntries    = rom_data[ 31: 0];
 
   // Block stack
   wire[ ROM_ADDR-1:0] blockStack_out_PC         = blockStack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH)  :9+2*(1+STACK_DEPTH)];
@@ -205,6 +211,7 @@ module cpu
 
   logic [STACK_WIDTH - 1:0] stack_aux1, stack_aux2;
 
+  logic [31:0] call_PC;
   task call_return;
     // Set program counter to next instruction after function call
     PC <= callStack_out_PC;
@@ -219,14 +226,14 @@ module cpu
 
     stack_offset    <= callStack_out_index;
     stack_underflow <= callStack_out_underflow;
+    stack_upper     <= callStack_out_upper;
+    stack_lower     <= callStack_out_lower;
 
     // Check type and set result value
     if(callStack_out_returnType == 7'h40)
       stack_op <= `INDEX_RESET;
 
-    // TODO Get and check function return types
-    // else if(7'h7f - callStack_out_returnType == stack_out[65:64]) begin
-    else if(1) begin
+    else if(7'h7f - callStack_out_returnType == result_type) begin
       stack_op   <= `INDEX_RESET_AND_PUSH;
       stack_data <= stack_out;
     end
@@ -311,6 +318,8 @@ module cpu
 
       stack_offset    <= 0;
       stack_underflow <= 0;
+      stack_upper     <= 0;
+      stack_lower     <= 0;
     end
 
     else if(!trap) begin
@@ -359,7 +368,7 @@ module cpu
                 blockStack_data <= {rom_data_PC, `block, leb128_out[6:0],
                                     stack_index, stack_underflow};
 
-                // Set an empty stack for the called block
+                // Set an empty stack for the block
                 stack_underflow <= stack_index;
 
                 PC <= PC+5;
@@ -422,24 +431,12 @@ module cpu
 
               // Call operators
               `op_call: begin
-                rom_addr  <= leb128_out;  //1+leb128_out;
-                rom_extra <= 10;  // 5
+                // Get function metadata
+                rom_addr  <= 4 + leb128_out * 13;
+                rom_extra <= 12;
 
-                // Store block stack index on the call stack
-                callStack_op   <= `PUSH;
-                // TODO Spec says "A direct call to a function with a mismatched
-                //      signature is a module verification error". Should return
-                //       value be verified, or it's already done at loading?
-                // TODO get function return value
-                // TODO substract function arguments
-                callStack_data <= {PC+leb128_len, 7'b0, blockStack_index,
-                                   blockStack_underflow, stack_index,
-                                   stack_underflow, stack_upper,
-                                   stack_lower-8'b0};
-
-                // Set empty stacks for the called function
-                blockStack_underflow <= blockStack_index;
-                stack_underflow      <= stack_index;
+                // Store on call stack the address after the function call
+                call_PC <= PC+leb128_len;
 
                 step <= EXEC2;
               end
@@ -603,7 +600,30 @@ module cpu
 
             // Call operators
             `op_call: begin
-              PC <= leb128_out;
+              if(rom_error)
+                trap <= `ROM_ERROR;
+
+              else begin
+                PC <= rom_data_functionAddress;
+
+                // Store block and operators stacks status on the call stack
+                callStack_op   <= `PUSH;
+                // TODO Spec says "A direct call to a function with a mismatched
+                //      signature is a module verification error". Should return
+                //       value be verified, or it's already done at loading?
+                callStack_data <= {call_PC, rom_data_returnType,
+                                   blockStack_index, blockStack_underflow,
+                                   stack_index - rom_data_arguments[STACK_DEPTH:0],
+                                   stack_underflow, stack_upper,
+                                   stack_lower};
+
+                // Set empty stacks for the called function
+                blockStack_underflow <= blockStack_index;
+
+                stack_underflow <= stack_index + rom_data_localEntries - rom_data_arguments;
+                stack_upper     <= stack_index + rom_data_localEntries - rom_data_arguments;
+                stack_lower     <= stack_index                         - rom_data_arguments;
+              end
             end
 
             // Parametric operators

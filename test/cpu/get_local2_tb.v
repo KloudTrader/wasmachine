@@ -9,14 +9,14 @@ module cpu_tb();
 
   reg                 clk   = 0;
   reg                 reset = 1;
-  reg  [ROM_ADDR-1:0] pc    = 33;
+  reg  [ROM_ADDR-1:0] pc    = 54;
   wire [        63:0] result;
   wire [         1:0] result_type;
   wire                result_empty;
   wire [         3:0] trap;
 
   cpu #(
-    .ROM_FILE("call1.hex"),
+    .ROM_FILE("get_local2.hex"),
     .ROM_ADDR(ROM_ADDR)
   )
   dut
@@ -33,14 +33,14 @@ module cpu_tb();
   always #1 clk = ~clk;
 
   initial begin
-    $dumpfile("call1_tb.vcd");
+    $dumpfile("get_local2_tb.vcd");
     $dumpvars(0, cpu_tb);
 
     #1
     reset <= 0;
 
-    #29
-    `assert(result, 42);
+    #97
+    `assert(result, 4);
     `assert(result_type, `i64);
     `assert(result_empty, 0);
 

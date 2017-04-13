@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Tue Apr 11 20:35:49 2017
+[*] Wed Apr 12 23:54:12 2017
 [*]
-[dumpfile] "/home/piranna/github/wasmachine/build/cpu/get_local_tb.vcd"
-[dumpfile_mtime] "Tue Apr 11 20:33:17 2017"
-[dumpfile_size] 17474
+[dumpfile] "/home/piranna/github/wasmachine/build/cpu/get_local2_tb.vcd"
+[dumpfile_mtime] "Wed Apr 12 23:11:00 2017"
+[dumpfile_size] 17487
 [savefile] "/home/piranna/github/wasmachine/test/cpu/cpu_tb.gtkw"
 [timestart] 0
 [size] 1366 720
 [pos] -1 -1
-*-2.901924 35 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-2.901924 17 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] cpu_tb.
 [treeopen] cpu_tb.dut.
 [treeopen] cpu_tb.dut.stack.
@@ -20,7 +20,7 @@
 @28
 cpu_tb.dut.clk
 @22
-cpu_tb.dut.PC[3:0]
+cpu_tb.dut.PC[5:0]
 @28
 cpu_tb.dut.reset
 @200
@@ -41,9 +41,13 @@ cpu_tb.result_empty
 @200
 -ROM
 @22
-cpu_tb.dut.rom_addr[3:0]
+cpu_tb.dut.rom_addr[5:0]
 cpu_tb.dut.rom_extra[3:0]
 cpu_tb.dut.rom_data[127:0]
+cpu_tb.dut.rom_data_functionAddress[31:0]
+cpu_tb.dut.rom_data_returnType[6:0]
+cpu_tb.dut.rom_data_arguments[31:0]
+cpu_tb.dut.rom_data_localEntries[31:0]
 cpu_tb.dut.rom_data_PC[31:0]
 @28
 cpu_tb.dut.rom_error
@@ -54,7 +58,12 @@ cpu_tb.dut.stack_op[2:0]
 @22
 cpu_tb.dut.stack_data[65:0]
 cpu_tb.dut.stack_index[7:0]
+cpu_tb.dut.stack_underflow[7:0]
+cpu_tb.dut.stack_upper[7:0]
+cpu_tb.dut.stack_lower[7:0]
 cpu_tb.dut.stack_out[65:0]
+cpu_tb.dut.stack_out1[65:0]
+cpu_tb.dut.stack_out2[65:0]
 @28
 cpu_tb.dut.stack_status[2:0]
 @200
@@ -64,12 +73,25 @@ cpu_tb.dut.blockStack_op[2:0]
 @22
 cpu_tb.dut.blockStack_data[65:0]
 cpu_tb.dut.blockStack_index[3:0]
-@23
 cpu_tb.dut.blockStack_underflow[3:0]
 @28
 cpu_tb.dut.blockStack_status[2:0]
 @200
 -Call stack
+@22
+cpu_tb.dut.call_PC[31:0]
+@23
+cpu_tb.dut.callStack_data[52:0]
+@22
+cpu_tb.dut.callStack_out[52:0]
+cpu_tb.dut.callStack_out_PC[5:0]
+cpu_tb.dut.callStack_out_returnType[6:0]
+cpu_tb.dut.callStack_out_blockIndex[3:0]
+cpu_tb.dut.callStack_out_blockUnderflow[3:0]
+cpu_tb.dut.callStack_out_index[7:0]
+cpu_tb.dut.callStack_out_underflow[7:0]
+cpu_tb.dut.callStack_out_upper[7:0]
+cpu_tb.dut.callStack_out_lower[7:0]
 @28
 cpu_tb.dut.callStack_status[1:0]
 cpu_tb.dut.callStack.index[1:0]

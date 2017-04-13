@@ -5,11 +5,11 @@
 
 module cpu_tb();
 
-  parameter ROM_ADDR = 4;
+  parameter ROM_ADDR = 6;
 
   reg                 clk   = 0;
   reg                 reset = 1;
-  reg  [ROM_ADDR-1:0] pc    = 6;
+  reg  [ROM_ADDR-1:0] pc    = 33;
   wire [        63:0] result;
   wire [         1:0] result_type;
   wire                result_empty;

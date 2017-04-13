@@ -92,8 +92,9 @@ test/cpu/select1: $(BUILD)/cpu/select1_tb.vcd
 test/cpu/select2: $(BUILD)/cpu/select2_tb.vcd
 test/cpu/select3: $(BUILD)/cpu/select3_tb.vcd
 
-test/cpu/variable_access: test/cpu/get_local
-test/cpu/get_local: $(BUILD)/cpu/get_local_tb.vcd
+test/cpu/variable_access: test/cpu/get_local1 test/cpu/get_local2
+test/cpu/get_local1: $(BUILD)/cpu/get_local1_tb.vcd
+test/cpu/get_local2: $(BUILD)/cpu/get_local2_tb.vcd
 
 test/cpu/constants: test/cpu/f32.const test/cpu/f64.const test/cpu/i32.const \
 	                  test/cpu/i64.const
