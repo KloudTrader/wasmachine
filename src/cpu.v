@@ -8,16 +8,18 @@
 
 module cpu
 #(
-  parameter ROM_ADDR = 4
+  parameter ROM_ADDR    = 4,
+  parameter STACK_DEPTH = 7
 )
 (
-  input  wire                clk,
-  input  wire                reset,
-  input  wire [ROM_ADDR-1:0] pc,
-  output wire [        63:0] result,
-  output wire [         1:0] result_type,
-  output wire                result_empty,
-  output reg  [         3:0] trap = `NONE
+  input  wire                 clk,
+  input  wire                 reset,
+  input  wire [ ROM_ADDR-1:0] pc,
+  input  wire [STACK_DEPTH:0] index,
+  output wire [         63:0] result,
+  output wire [          1:0] result_type,
+  output wire                 result_empty,
+  output reg  [          3:0] trap = `NONE
 );
 
   // ROM
@@ -49,7 +51,6 @@ module cpu
 
   // Stack
   localparam STACK_WIDTH = 66;
-  localparam STACK_DEPTH = 7;
 
   reg  [            2:0] stack_op;
   reg  [STACK_WIDTH-1:0] stack_data;
@@ -337,9 +338,11 @@ module cpu
       blockStack_offset    <= 0;
       blockStack_underflow <= 0;
 
-      stack_offset    <= 0;
-      stack_underflow <= 0;
-      stack_upper     <= 0;
+      // TODO find a way to set function arguments
+      stack_op <= `INDEX_RESET;
+      stack_offset    <= index;
+      stack_underflow <= index;
+      stack_upper     <= index;
       stack_lower     <= 0;
     end
 
