@@ -58,6 +58,7 @@ module cpu
   reg  [STACK_DEPTH  :0] stack_underflow = 0;
   reg  [STACK_DEPTH  :0] stack_upper = 0;
   reg  [STACK_DEPTH  :0] stack_lower = 0;
+  reg                    stack_dropTos;
   wire [STACK_DEPTH  :0] stack_index;
   wire [STACK_WIDTH-1:0] stack_out;
   wire [STACK_WIDTH-1:0] stack_out1;
@@ -77,6 +78,7 @@ module cpu
     .underflow_limit(stack_underflow),
     .upper_limit(stack_upper),
     .lower_limit(stack_lower),
+    .dropTos(stack_dropTos),
     .index(stack_index),
     .out(stack_out),
     .out1(stack_out1),
@@ -478,6 +480,18 @@ module cpu
 
                 PC <= PC+leb128_len;
                 step <= EXEC2;
+              end
+
+              `op_set_local,
+              `op_tee_local: begin
+                stack_op     <= `UNDERFLOW_SET;
+                stack_data   <= stack_out;
+                stack_offset <= leb128_out;
+
+                // Remove from ToS the data we are storing as the local variable
+                stack_dropTos <= opcode == `op_set_local;
+
+                PC <= PC+leb128_len;
               end
 
               // Memory-related operators

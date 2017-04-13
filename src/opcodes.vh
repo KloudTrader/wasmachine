@@ -20,6 +20,8 @@
 
 // Variable access
 `define op_get_local  8'h20
+`define op_set_local  8'h21
+`define op_tee_local  8'h22
 
 // Memory-related operators
 
