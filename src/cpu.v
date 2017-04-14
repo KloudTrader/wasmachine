@@ -461,9 +461,32 @@ module cpu
               end
 
               `op_br_if: begin
-                // TODO break functions
-                if(blockStack_status == `EMPTY)
-                  trap <= `BLOCK_STACK_EMPTY;
+                // Consume ToS
+                stack_op   <= `POP;
+                stack_data <= 0;
+
+                if(blockStack_status == `EMPTY) begin
+                  // We can't break out beyond functions, raise error
+                  if(leb128_out)
+                    trap <= `BLOCK_STACK_EMPTY;
+
+                  else if(callStack_status == `EMPTY)
+                    trap <= `CALL_STACK_EMPTY;
+
+                  else if(stack_status == `EMPTY)
+                    trap <= `STACK_EMPTY;
+
+                  else if(result_type != `i32)
+                    trap <= `TYPE_MISMATCH;
+
+                  // Condition is `true`, do the break
+                  else if(stack_out_32)
+                    block_return();
+
+                  // Condition is `false`, don't break
+                  else
+                    PC <= PC+leb128_len;
+                end
 
                 else if(stack_status == `EMPTY)
                   trap <= `STACK_EMPTY;
@@ -471,8 +494,13 @@ module cpu
                 else if(result_type != `i32)
                   trap <= `TYPE_MISMATCH;
 
-                else if(stack_out[31:0])
+                // Condition is `true`, do the break
+                else if(stack_out_32)
                   block_break(leb128_out);
+
+                // Condition is `false`, don't break
+                else
+                  PC <= PC+leb128_len;
               end
 
               `op_return: begin
