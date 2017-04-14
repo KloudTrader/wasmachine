@@ -281,12 +281,14 @@ module cpu
     stack_underflow <= blockStack_out_underflow;
 
     // Check type and set result value
+    // TODO "At the end of the block the remaining inner operands must match the
+    // block signature". Should we check and use the actual stack status instead
+    // of the expected output? Are we in fact relocating the stack data, or are
+    // we just overwritting it?
     if(blockStack_out_returnType == 7'h40)
       stack_op <= `INDEX_RESET;
 
-    // TODO Get and check function return types
-    // else if(7'h7f - blockStack_out_returnType == data[65:64]) begin
-    else if(1) begin
+    else if(7'h7f - blockStack_out_returnType == data[65:64]) begin
       stack_op   <= `INDEX_RESET_AND_PUSH;
       stack_data <= data;
     end
