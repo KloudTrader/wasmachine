@@ -630,7 +630,7 @@ module cpu
             `op_br,
             `op_br_if: begin
               if(blockStack_status > `EMPTY)
-                trap <= `CALL_STACK_ERROR;
+                trap <= `BLOCK_STACK_ERROR;
 
               else
                 block_break2();
@@ -675,8 +675,12 @@ module cpu
 
             // Variable access
             `op_get_local: begin
-              stack_op <= `PUSH;
-              stack_data <= stack_out;
+              if(stack_status > `EMPTY) trap <= `STACK_ERROR;
+
+              else begin
+                stack_op   <= `PUSH;
+                stack_data <= stack_out;
+              end
             end
 
             // Comparison operators
