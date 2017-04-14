@@ -1,12 +1,12 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Fri Apr 14 15:23:00 2017
+[*] Fri Apr 14 21:06:46 2017
 [*]
-[dumpfile] "/home/piranna/github/wasmachine/build/cpu/loop_tb.vcd"
-[dumpfile_mtime] "Fri Apr 14 15:20:43 2017"
-[dumpfile_size] 37618
+[dumpfile] "/home/piranna/github/wasmachine/build/cpu/if1_tb.vcd"
+[dumpfile_mtime] "Fri Apr 14 21:06:08 2017"
+[dumpfile_size] 12435
 [savefile] "/home/piranna/github/wasmachine/test/cpu/cpu_tb.gtkw"
-[timestart] 235
+[timestart] 0
 [size] 1366 720
 [pos] -1 -1
 *-2.901924 85 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
@@ -19,8 +19,8 @@
 [sst_vpaned_height] 293
 @28
 cpu_tb.dut.clk
-@22
-cpu_tb.dut.PC[5:0]
+@23
+cpu_tb.dut.PC[3:0]
 @28
 cpu_tb.dut.reset
 @200
@@ -73,9 +73,8 @@ cpu_tb.dut.blockStack_op[2:0]
 cpu_tb.dut.blockStack_data[65:0]
 @28
 cpu_tb.dut.blockStack_out_type[1:0]
-@23
-cpu_tb.dut.blockStack_out_returnType[6:0]
 @22
+cpu_tb.dut.blockStack_out_returnType[6:0]
 cpu_tb.dut.blockStack_index[3:0]
 cpu_tb.dut.blockStack_underflow[3:0]
 @28

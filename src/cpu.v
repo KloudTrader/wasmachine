@@ -333,7 +333,8 @@ module cpu
 
     else
       case (blockStack_out_type)
-        `block     : block_return();
+        `block,
+        `block_if  : block_return();
         `block_loop: block_loop_back();
 
         default:
@@ -423,6 +424,36 @@ module cpu
                 stack_underflow <= stack_index;
               end
 
+              `op_if: begin
+                if(stack_status == `EMPTY)
+                  trap <= `STACK_EMPTY;
+
+                else begin
+                  // Add stack slice if conditional is true or we have an `else`
+                  if(stack_out_32 || rom_data[39:8]) begin
+                    // Store current status on the blocks stack
+                    blockStack_op   <= `PUSH;
+                    // TODO should we use relative addresses for destination?
+                    blockStack_data <= {rom_data_PC, `block, leb128_out[6:0],
+                                        stack_index, stack_underflow};
+
+                    // Set an empty stack for the block
+                    stack_underflow <= stack_index;
+                  end
+
+                  // Conditional is true, go to `true` block
+                  if(stack_out_32)
+                    PC <= PC+9;
+
+                  // Conditional is `false`, jump to begin of `else` block
+                  else if(rom_data[39:8])
+                    PC <= rom_data[39:8];
+
+                  // Conditional is `false`, jump to end of `if` block
+                  else
+                    PC <= rom_data_PC;
+                end
+              end
 
               `op_end: begin
                 // Function
