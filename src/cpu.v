@@ -297,6 +297,15 @@ module cpu
       trap <= `TYPE_MISMATCH;
   endtask
 
+  task block_loop_back;
+    // Go back to loop begin
+    PC <= blockStack_out_PC;
+
+    // Reset the stack
+    stack_op     <= `INDEX_RESET;
+    stack_offset <= blockStack_out_index;
+  endtask
+
   task block_break;
     input [31:0] depth;
 
@@ -402,14 +411,33 @@ module cpu
                 PC <= PC+5;
               end
 
-              `op_end: begin
-                // Main call (`start`, `export`), return results and halt
-                if(callStack_status == `EMPTY)
-                  trap <= `ENDED;
+              `op_loop: begin
+                PC = PC+5;
 
+                // Store current return status on the call stack
+                blockStack_op   <= `PUSH;
+                blockStack_data <= {PC, `block_loop, leb128_out[6:0],
+                                    stack_index, stack_underflow};
+
+                // Set an empty stack for the block
+                stack_underflow <= stack_index;
+              end
+
+
+              `op_end: begin
                 // Function
-                else if(blockStack_status == `EMPTY)
-                  call_return();
+                if(blockStack_status == `EMPTY) begin
+                  // Main call (`start`, `export`), return results and halt
+                  if(callStack_status == `EMPTY)
+                    trap <= `ENDED;
+
+                  else
+                    call_return();
+                end
+
+                // Loop, go back to its begin
+                else if(blockStack_out_type == `block_loop)
+                  block_loop_back();
 
                 // Block or if
                 else

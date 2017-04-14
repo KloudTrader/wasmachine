@@ -76,6 +76,7 @@ test/cpu: test/cpu/control_flow_operators test/cpu/call_operators \
 test/cpu/control_flow_operators: test/cpu/block test/cpu/br test/cpu/br_if \
 																 test/cpu/return
 test/cpu/block: $(BUILD)/cpu/block_tb.vcd
+test/cpu/loop: $(BUILD)/cpu/loop_tb.vcd
 test/cpu/br: $(BUILD)/cpu/br_tb.vcd
 test/cpu/br_if: $(BUILD)/cpu/br_if_tb.vcd
 test/cpu/return: $(BUILD)/cpu/return_tb.vcd
