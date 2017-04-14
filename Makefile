@@ -74,12 +74,16 @@ test/cpu: test/cpu/control_flow_operators test/cpu/call_operators \
 					test/cpu/reinterpretations
 
 test/cpu/control_flow_operators: test/cpu/block test/cpu/loop test/cpu/if \
-																 test/cpu/br test/cpu/br_if test/cpu/return
+																 test/cpu/else test/cpu/br test/cpu/br_if \
+																 test/cpu/return
 test/cpu/block: $(BUILD)/cpu/block_tb.vcd
 test/cpu/loop: $(BUILD)/cpu/loop_tb.vcd
 test/cpu/if: test/cpu/if1 test/cpu/if2
 test/cpu/if1: $(BUILD)/cpu/if1_tb.vcd
 test/cpu/if2: $(BUILD)/cpu/if2_tb.vcd
+test/cpu/else: test/cpu/else1 test/cpu/else2
+test/cpu/else1: $(BUILD)/cpu/else1_tb.vcd
+test/cpu/else2: $(BUILD)/cpu/else2_tb.vcd
 test/cpu/br: $(BUILD)/cpu/br_tb.vcd
 test/cpu/br_if: $(BUILD)/cpu/br_if_tb.vcd
 test/cpu/return: $(BUILD)/cpu/return_tb.vcd

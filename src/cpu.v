@@ -434,7 +434,7 @@ module cpu
                     // Store current status on the blocks stack
                     blockStack_op   <= `PUSH;
                     // TODO should we use relative addresses for destination?
-                    blockStack_data <= {rom_data_PC, `block, leb128_out[6:0],
+                    blockStack_data <= {rom_data_PC, `block_if, leb128_out[6:0],
                                         stack_index, stack_underflow};
 
                     // Set an empty stack for the block
@@ -453,6 +453,17 @@ module cpu
                   else
                     PC <= rom_data_PC;
                 end
+              end
+
+              `op_else: begin
+                if(blockStack_status == `EMPTY)
+                  trap <= `BLOCK_STACK_EMPTY;
+
+                else if(blockStack_out_type != `block_if)
+                  trap <= `BAD_BLOCK_TYPE;
+
+                else
+                  block_return();
               end
 
               `op_end: begin

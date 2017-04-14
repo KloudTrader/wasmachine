@@ -22,7 +22,6 @@
 //`define BAD_LABEL         14
 
 // blocks
-`define block          2'h0
-`define block_loop     2'h1
-`define block_if       2'h2
-`define block_function 2'h3
+`define block      2'h0
+`define block_loop 2'h1
+`define block_if   2'h2
