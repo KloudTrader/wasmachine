@@ -447,13 +447,10 @@ module cpu
                   if(stack_out_32)
                     PC <= PC+9;
 
-                  // Conditional is `false`, jump to begin of `else` block
-                  else if(rom_data[39:8])
-                    PC <= rom_data[39:8];
-
-                  // Conditional is `false`, jump to end of `if` block
+                  // Conditional is `false`
                   else
-                    PC <= rom_data_PC;
+                    // Go to begin of `else` block or end of `if` conditional
+                    PC <= rom_data[39:8] ? rom_data[39:8] : rom_data_PC;
                 end
               end
 
