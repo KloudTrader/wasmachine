@@ -87,9 +87,7 @@ module cpu
   );
 
   // Block stack
-  localparam BLOCK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
-
-  localparam BLOCK_STACK_WIDTH = (STACK_WIDTH > BLOCK_WIDTH) ? STACK_WIDTH : BLOCK_WIDTH;
+  localparam BLOCK_STACK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
   localparam BLOCK_STACK_DEPTH = 3;
 
   reg  [                  2:0] blockStack_op;
@@ -200,14 +198,6 @@ module cpu
   wire[          6:0] blockStack_out_returnType = blockStack_out[           6+2*(1+STACK_DEPTH)  :  2*(1+STACK_DEPTH)];
   wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[             2*(1+STACK_DEPTH)-1:     1+STACK_DEPTH ];
   wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[                  STACK_DEPTH   :                  0];
-
-  wire[ 1:0] blockStack_data_valueType = blockStack_data[65:64];
-  wire[63:0] blockStack_data_value_64  = blockStack_data[63: 0];
-  wire[31:0] blockStack_data_value_32  = blockStack_data[31: 0];
-
-  wire[ 1:0] blockStack_out_valueType = blockStack_out[65:64];
-  wire[63:0] blockStack_out_value_64  = blockStack_out[63: 0];
-  wire[31:0] blockStack_out_value_32  = blockStack_out[31: 0];
 
   // Call stack
   wire[       ROM_ADDR-1:0] callStack_out_PC             = callStack_out[ROM_ADDR-1+7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
