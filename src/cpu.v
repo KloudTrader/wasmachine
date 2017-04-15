@@ -318,7 +318,7 @@ module cpu
   task block_break2;
     if(blockStack_status == `EMPTY) begin
       if(callStack_status == `EMPTY)
-        trap <= `CALL_STACK_EMPTY;
+        trap <= `ENDED;
 
       else
         call_return();
@@ -485,7 +485,7 @@ module cpu
                     trap <= `BLOCK_STACK_EMPTY;
 
                   else if(callStack_status == `EMPTY)
-                    trap <= `CALL_STACK_EMPTY;
+                    trap <= `ENDED;
 
                   else
                     block_return();
@@ -506,7 +506,7 @@ module cpu
                     trap <= `BLOCK_STACK_EMPTY;
 
                   else if(callStack_status == `EMPTY)
-                    trap <= `CALL_STACK_EMPTY;
+                    trap <= `ENDED;
 
                   else if(stack_status == `EMPTY)
                     trap <= `STACK_EMPTY;
