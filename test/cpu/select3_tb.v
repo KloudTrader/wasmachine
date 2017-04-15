@@ -30,7 +30,7 @@ module cpu_tb();
     $dumpfile("select3_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #30
+    #24
     `assert(trap, `TYPES_MISMATCH);
 
     $finish;

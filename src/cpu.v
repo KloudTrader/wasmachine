@@ -224,7 +224,7 @@ module cpu
   reg [ROM_ADDR-1:0] PC   = 0;
   reg [7:0]          opcode;
 
-  logic [STACK_WIDTH - 1:0] stack_aux1, stack_aux2;
+  logic [STACK_WIDTH - 1:0] stack_aux1;
 
   logic [31:0] brTable_offset, brTable_offset2;
   logic [31:0] call_PC;
@@ -553,6 +553,18 @@ module cpu
                 stack_data <= 0;
               end
 
+              `op_select: begin
+                // Validate both operators are of the same type
+                if(stack_out1[65:64] != stack_out2[65:64])
+                  trap <= `TYPES_MISMATCH;
+
+                else begin
+                  stack_op     <= `INDEX_RESET_AND_PUSH;
+                  stack_offset <= stack_index - 3;
+                  stack_data   <= stack_out ? stack_out1 : stack_out2;
+                end
+              end
+
               // Variable access
               `op_get_local: begin
                 stack_op     <= `UNDERFLOW_GET;
@@ -664,7 +676,6 @@ module cpu
               end
 
               // Binary and ternary operations
-              `op_select,
               `op_i32_eq,
               `op_i32_ne,
               `op_i64_eq,
@@ -690,16 +701,6 @@ module cpu
 
         EXEC2: begin
           step <= EXEC3;
-
-          case (opcode)
-            // Parametric operators
-            `op_select: begin
-              // Remove first operator from stack on next tick after condition
-              // gets removed
-              stack_op   <= `POP;
-              stack_data <= 0;
-            end
-          endcase
         end
 
         EXEC3: begin
@@ -750,15 +751,6 @@ module cpu
                 stack_upper     <= stack_index + rom_data_localEntries - rom_data_arguments;
                 stack_lower     <= stack_index                         - rom_data_arguments;
               end
-            end
-
-            // Parametric operators
-            `op_select: begin
-              // Store first operator before gets removed from stack and after
-              // condition has been already removed
-              stack_aux2 <= stack_out;
-
-              step <= EXEC4;
             end
 
             // Variable access
@@ -864,33 +856,7 @@ module cpu
         end
 
         EXEC4: begin
-          step <= FETCH;
-
-          case (opcode)
-            `op_br_table: begin
-              step <= EXEC5;
-            end
-
-            // Parametric operators
-            `op_select: begin
-              // Validate both operators are of the same type
-              if(stack_aux2[65:64] != result_type)
-                trap <= `TYPES_MISMATCH;
-
-              else begin
-                // Condition is true, replace second operator with first one (we
-                // have just got it, and at the same time it will be removed
-                // from the stack on the next cycle due to `EXEC2`)
-                if(stack_aux1) begin
-                  stack_op <= `REPLACE;
-                  stack_data <= stack_aux2;
-                end
-
-                // Second operator is already on tos, so there's no need to do
-                // anything with it
-              end
-            end
-          endcase
+          step <= EXEC5;
         end
 
         EXEC5: begin
