@@ -87,7 +87,19 @@ module cpu
   );
 
   // Block stack
-  localparam BLOCK_STACK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
+  localparam UNDERFLOW_L = 0;
+  localparam UNDERFLOW_H = UNDERFLOW_L + STACK_DEPTH;
+  localparam INDEX_L     = UNDERFLOW_H + 1;
+  localparam INDEX_H     = INDEX_L     + STACK_DEPTH;
+  localparam PC_L        = INDEX_H     + 1;
+  localparam PC_H        = PC_L        + 31;
+  localparam RETURN_L    = PC_H        + 1;
+  localparam RETURN_H    = RETURN_L    + 6;
+
+  localparam TYPE_L = RETURN_H+1;
+  localparam TYPE_H = TYPE_L  +1;
+
+  localparam BLOCK_STACK_WIDTH = TYPE_H+1;
   localparam BLOCK_STACK_DEPTH = 3;
 
   reg  [                  2:0] blockStack_op;
@@ -118,8 +130,16 @@ module cpu
   );
 
   // Call stack
-  localparam CALL_STACK_WIDTH = ROM_ADDR + 7 + 2*(BLOCK_STACK_DEPTH+1) +
-                                               4*(STACK_DEPTH+1);
+  localparam LOWER_L           = RETURN_H          + 1;
+  localparam LOWER_H           = LOWER_L           + STACK_DEPTH;
+  localparam UPPER_L           = LOWER_H           + 1;
+  localparam UPPER_H           = UPPER_L           + STACK_DEPTH;
+  localparam BLOCK_UNDERFLOW_L = UPPER_H           + 1;
+  localparam BLOCK_UNDERFLOW_H = BLOCK_UNDERFLOW_L + BLOCK_STACK_DEPTH;
+  localparam BLOCK_INDEX_L     = BLOCK_UNDERFLOW_H + 1;
+  localparam BLOCK_INDEX_H     = BLOCK_INDEX_L     + BLOCK_STACK_DEPTH;
+
+  localparam CALL_STACK_WIDTH = BLOCK_INDEX_H+1;
   localparam CALL_STACK_DEPTH = 1;
 
   reg  [                 1:0] callStack_op;
@@ -193,21 +213,21 @@ module cpu
   wire[31:0] stack_out_32   = stack_out[31:0];
 
   // Block stack
-  wire[ ROM_ADDR-1:0] blockStack_out_PC         = blockStack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH)  :9+2*(1+STACK_DEPTH)];
-  wire[          1:0] blockStack_out_type       = blockStack_out[           8+2*(1+STACK_DEPTH)  :7+2*(1+STACK_DEPTH)];
-  wire[          6:0] blockStack_out_returnType = blockStack_out[           6+2*(1+STACK_DEPTH)  :  2*(1+STACK_DEPTH)];
-  wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[             2*(1+STACK_DEPTH)-1:     1+STACK_DEPTH ];
-  wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[                  STACK_DEPTH   :                  0];
+  wire[          1:0] blockStack_out_type       = blockStack_out[     TYPE_H:     TYPE_L];
+  wire[          6:0] blockStack_out_returnType = blockStack_out[   RETURN_H:   RETURN_L];
+  wire[         31:0] blockStack_out_PC         = blockStack_out[       PC_H:       PC_L];
+  wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[    INDEX_H:    INDEX_L];
+  wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[UNDERFLOW_H:UNDERFLOW_L];
 
   // Call stack
-  wire[       ROM_ADDR-1:0] callStack_out_PC             = callStack_out[ROM_ADDR-1+7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
-  wire[                6:0] callStack_out_returnType     = callStack_out[           6+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :  2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
-  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[             2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)-1:     BLOCK_STACK_DEPTH+1 +4*(STACK_DEPTH+1)];
-  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[                BLOCK_STACK_DEPTH+1 +4*(STACK_DEPTH+1)-1:                          4*(1+STACK_DEPTH)];
-  wire[      STACK_DEPTH:0] callStack_out_index          = callStack_out[                                     4*(1+STACK_DEPTH)-1:                          3*(1+STACK_DEPTH)];
-  wire[      STACK_DEPTH:0] callStack_out_underflow      = callStack_out[                                     3*(1+STACK_DEPTH)-1:                          2*(1+STACK_DEPTH)];
-  wire[      STACK_DEPTH:0] callStack_out_upper          = callStack_out[                                     2*(1+STACK_DEPTH)-1:                             1+STACK_DEPTH ];
-  wire[      STACK_DEPTH:0] callStack_out_lower          = callStack_out[                                          STACK_DEPTH   :                                          0];
+  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[    BLOCK_INDEX_H:    BLOCK_INDEX_L];
+  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[BLOCK_UNDERFLOW_H:BLOCK_UNDERFLOW_L];
+  wire[      STACK_DEPTH:0] callStack_out_upper          = callStack_out[          UPPER_H:          UPPER_L];
+  wire[      STACK_DEPTH:0] callStack_out_lower          = callStack_out[          LOWER_H:          LOWER_L];
+  wire[                6:0] callStack_out_returnType     = callStack_out[         RETURN_H:         RETURN_L];
+  wire[               31:0] callStack_out_PC             = callStack_out[             PC_H:             PC_L];
+  wire[      STACK_DEPTH:0] callStack_out_index          = callStack_out[          INDEX_H:          INDEX_L];
+  wire[      STACK_DEPTH:0] callStack_out_underflow      = callStack_out[      UNDERFLOW_H:      UNDERFLOW_L];
 
   //
   // CPU internal status
@@ -358,7 +378,7 @@ module cpu
     // Store current status on the blocks stack
     blockStack_op   <= `PUSH;
     // TODO should we use relative addresses for destination?
-    blockStack_data <= {block_PC, block_type, leb128_out[6:0], stack_index,
+    blockStack_data <= {block_type, leb128_out[6:0], block_PC, stack_index,
                         stack_underflow};
 
     // Set an empty stack for the block
@@ -738,11 +758,11 @@ module cpu
                 // TODO Spec says "A direct call to a function with a mismatched
                 //      signature is a module verification error". Should return
                 //       value be verified, or it's already done at loading?
-                callStack_data <= {call_PC, rom_data_returnType,
-                                   blockStack_index, blockStack_underflow,
-                                   stack_index - rom_data_arguments[STACK_DEPTH:0],
-                                   stack_underflow, stack_upper,
-                                   stack_lower};
+                callStack_data <= {blockStack_index, blockStack_underflow,
+                                   stack_upper, stack_lower,
+                                   rom_data_returnType, call_PC,
+                                   stack_index-rom_data_arguments[STACK_DEPTH:0],
+                                   stack_underflow};
 
                 // Set empty stacks for the called function
                 blockStack_underflow <= blockStack_index;
