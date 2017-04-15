@@ -229,36 +229,47 @@ module cpu
   logic [31:0] brTable_offset, brTable_offset2;
   logic [31:0] call_PC;
 
+  // TODO try to unify with `block_return`. Check for ranges
   task call_return;
-    // Set program counter to next instruction after function call
-    PC <= callStack_out_PC;
+    // Main call (`start`, `export`), return results and halt
+    if(callStack_status == `EMPTY)
+      trap <= `ENDED;
 
-    // Reset stacks
-    callStack_op   <= `POP;
-    callStack_data <= 0;
+    // Returning from a function call
+    else begin
+      // Reset blocks stack
+      blockStack_offset    <= callStack_out_blockIndex;
+      blockStack_underflow <= callStack_out_blockUnderflow;
+      blockStack_op        <= `INDEX_RESET;
 
-    blockStack_offset    <= callStack_out_blockIndex;
-    blockStack_underflow <= callStack_out_blockUnderflow;
-    blockStack_op        <= `INDEX_RESET;
+      stack_upper <= callStack_out_upper;
+      stack_lower <= callStack_out_lower;
 
-    stack_offset    <= callStack_out_index;
-    stack_underflow <= callStack_out_underflow;
-    stack_upper     <= callStack_out_upper;
-    stack_lower     <= callStack_out_lower;
+      // Set program counter to next instruction after function call
+      PC <= callStack_out_PC;
 
-    // Check type and set result value
-    if(callStack_out_returnType == 7'h40)
-      stack_op <= `INDEX_RESET;
+      // Reset main stack
+      callStack_op   <= `POP;
+      callStack_data <= 0;
 
-    else if(7'h7f - callStack_out_returnType == result_type) begin
-      stack_op   <= `INDEX_RESET_AND_PUSH;
-      stack_data <= stack_out;
+      stack_offset    <= callStack_out_index;
+      stack_underflow <= callStack_out_underflow;
+
+      // Check type and set result value
+      if(callStack_out_returnType == 7'h40)
+        stack_op <= `INDEX_RESET;
+
+      else if(7'h7f - callStack_out_returnType == result_type) begin
+        stack_op   <= `INDEX_RESET_AND_PUSH;
+        stack_data <= stack_out;
+      end
+
+      else
+        trap <= `TYPE_MISMATCH;
     end
-
-    else
-      trap <= `TYPE_MISMATCH;
   endtask
 
+  // TODO try to unify with `call_return`. Check for ranges
   task block_return;
     reg [STACK_WIDTH-1:0] data;
     data = (opcode == `op_br_if) ? stack_out1 : stack_out;
@@ -266,7 +277,7 @@ module cpu
     // Set program counter to next instruction after block
     PC <= blockStack_out_PC;
 
-    // Reset stacks
+    // Reset main stack
     blockStack_op   <= `POP;
     blockStack_data <= 0;
 
@@ -302,8 +313,18 @@ module cpu
   task block_break;
     input [31:0] depth;
 
+    // Breaking out from the root of a function
+    if(blockStack_status == `EMPTY) begin
+      // We can't break out beyond functions, raise error
+      if(depth)
+        trap <= `BLOCK_STACK_EMPTY;
+
+      else
+        call_return();
+    end
+
     // Break to outter block, remove inner ones first
-    if(depth) begin
+    else if(depth) begin
       blockStack_op   <= `POP;
       blockStack_data <= depth-1;  // Remove all slices except the desired one
 
@@ -316,13 +337,8 @@ module cpu
   endtask
 
   task block_break2;
-    if(blockStack_status == `EMPTY) begin
-      if(callStack_status == `EMPTY)
-        trap <= `ENDED;
-
-      else
-        call_return();
-    end
+    if(blockStack_status == `EMPTY)
+      call_return();
 
     else
       case (blockStack_out_type)
@@ -454,14 +470,8 @@ module cpu
 
               `op_end: begin
                 // Function
-                if(blockStack_status == `EMPTY) begin
-                  // Main call (`start`, `export`), return results and halt
-                  if(callStack_status == `EMPTY)
-                    trap <= `ENDED;
-
-                  else
-                    call_return();
-                end
+                if(blockStack_status == `EMPTY)
+                  call_return();
 
                 // Loop, go back to its begin
                 else if(blockStack_out_type == `block_loop)
@@ -472,51 +482,14 @@ module cpu
                   block_return();
               end
 
-              `op_br: begin
-                if(blockStack_status == `EMPTY) begin
-                  if(leb128_out)
-                    trap <= `BLOCK_STACK_EMPTY;
-
-                  else if(callStack_status == `EMPTY)
-                    trap <= `ENDED;
-
-                  else
-                    block_return();
-                end
-
-                else
-                  block_break(leb128_out);
-              end
+              `op_br: block_break(leb128_out);
 
               `op_br_if: begin
                 // Consume ToS
                 stack_op   <= `POP;
                 stack_data <= 0;
 
-                if(blockStack_status == `EMPTY) begin
-                  // We can't break out beyond functions, raise error
-                  if(leb128_out)
-                    trap <= `BLOCK_STACK_EMPTY;
-
-                  else if(callStack_status == `EMPTY)
-                    trap <= `ENDED;
-
-                  else if(stack_status == `EMPTY)
-                    trap <= `STACK_EMPTY;
-
-                  else if(result_type != `i32)
-                    trap <= `TYPE_MISMATCH;
-
-                  // Condition is `true`, do the break
-                  else if(stack_out_32)
-                    block_return();
-
-                  // Condition is `false`, don't break
-                  else
-                    PC <= PC+leb128_len;
-                end
-
-                else if(stack_status == `EMPTY)
+                if(stack_status == `EMPTY)
                   trap <= `STACK_EMPTY;
 
                 else if(result_type != `i32)
@@ -563,15 +536,7 @@ module cpu
                 end
               end
 
-              `op_return: begin
-                // Returning from main call (`start`, `export`), return results and halt
-                if(callStack_status == `EMPTY)
-                  trap <= `ENDED;
-
-                // Returning from a function call
-                else
-                  call_return();
-              end
+              `op_return: call_return();
 
               // Call operators
               `op_call: begin
@@ -757,19 +722,6 @@ module cpu
             `op_br_table: begin
               if(rom_error)
                 trap <= `ROM_ERROR;
-
-              // We are breaking out from the root of a function. Idiot, but who
-              // knows...
-              else if(blockStack_status == `EMPTY) begin
-                if(rom_data[31:0])
-                  trap <= `BLOCK_STACK_EMPTY;
-
-                else if(callStack_status == `EMPTY)
-                  trap <= `ENDED;
-
-                else
-                  block_return();
-              end
 
               else
                 block_break(rom_data[31:0]);
