@@ -335,6 +335,20 @@ module cpu
       endcase
   endtask
 
+  task block_add;
+    input [31:0] block_PC;
+    input [ 1:0] block_type;
+
+    // Store current status on the blocks stack
+    blockStack_op   <= `PUSH;
+    // TODO should we use relative addresses for destination?
+    blockStack_data <= {block_PC, block_type, leb128_out[6:0], stack_index,
+                        stack_underflow};
+
+    // Set an empty stack for the block
+    stack_underflow <= stack_index;
+  endtask
+
   // Main loop
   always @(posedge clk) begin
     if(reset) begin
@@ -393,14 +407,7 @@ module cpu
               end
 
               `op_block: begin
-                // Store current status on the blocks stack
-                blockStack_op   <= `PUSH;
-                // TODO should we use relative addresses for destination?
-                blockStack_data <= {rom_data_PC, `block, leb128_out[6:0],
-                                    stack_index, stack_underflow};
-
-                // Set an empty stack for the block
-                stack_underflow <= stack_index;
+                block_add(rom_data_PC, `block);
 
                 PC <= PC+5;
               end
@@ -408,13 +415,7 @@ module cpu
               `op_loop: begin
                 PC = PC+5;
 
-                // Store current return status on the call stack
-                blockStack_op   <= `PUSH;
-                blockStack_data <= {PC, `block_loop, leb128_out[6:0],
-                                    stack_index, stack_underflow};
-
-                // Set an empty stack for the block
-                stack_underflow <= stack_index;
+                block_add(PC, `block_loop);
               end
 
               `op_if: begin
@@ -423,16 +424,8 @@ module cpu
 
                 else begin
                   // Add stack slice if conditional is true or we have an `else`
-                  if(stack_out_32 || rom_data[39:8]) begin
-                    // Store current status on the blocks stack
-                    blockStack_op   <= `PUSH;
-                    // TODO should we use relative addresses for destination?
-                    blockStack_data <= {rom_data_PC, `block_if, leb128_out[6:0],
-                                        stack_index, stack_underflow};
-
-                    // Set an empty stack for the block
-                    stack_underflow <= stack_index;
-                  end
+                  if(stack_out_32 || rom_data[39:8])
+                    block_add(rom_data_PC, `block_if);
 
                   // Conditional is true, go to `true` block
                   if(stack_out_32)
