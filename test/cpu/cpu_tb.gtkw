@@ -1,10 +1,10 @@
 [*]
 [*] GTKWave Analyzer v3.3.79 (w)1999-2017 BSI
-[*] Fri Apr 14 21:06:46 2017
+[*] Sat Apr 15 13:19:52 2017
 [*]
-[dumpfile] "/home/piranna/github/wasmachine/build/cpu/if1_tb.vcd"
-[dumpfile_mtime] "Fri Apr 14 21:06:08 2017"
-[dumpfile_size] 12435
+[dumpfile] "/home/piranna/github/wasmachine/build/cpu/br_table1_tb.vcd"
+[dumpfile_mtime] "Sat Apr 15 12:57:34 2017"
+[dumpfile_size] 11643
 [savefile] "/home/piranna/github/wasmachine/test/cpu/cpu_tb.gtkw"
 [timestart] 0
 [size] 1366 720
@@ -19,8 +19,8 @@
 [sst_vpaned_height] 293
 @28
 cpu_tb.dut.clk
-@23
-cpu_tb.dut.PC[3:0]
+@22
+cpu_tb.dut.PC[4:0]
 @28
 cpu_tb.dut.reset
 @200
@@ -42,6 +42,7 @@ cpu_tb.result_empty
 @22
 cpu_tb.dut.rom_extra[3:0]
 cpu_tb.dut.rom_data[127:0]
+cpu_tb.dut.rom_data_opcode[7:0]
 cpu_tb.dut.rom_data_functionAddress[31:0]
 cpu_tb.dut.rom_data_returnType[6:0]
 cpu_tb.dut.rom_data_arguments[31:0]
@@ -69,8 +70,8 @@ cpu_tb.dut.stack_status[2:0]
 -Block stack
 @28
 cpu_tb.dut.blockStack_op[2:0]
-@22
-cpu_tb.dut.blockStack_data[65:0]
+@23
+cpu_tb.dut.blockStack_data[29:0]
 @28
 cpu_tb.dut.blockStack_out_type[1:0]
 @22

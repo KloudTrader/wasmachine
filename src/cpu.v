@@ -228,6 +228,7 @@ module cpu
   localparam EXEC2  = 3'b011;
   localparam EXEC3  = 3'b100;
   localparam EXEC4  = 3'b101;
+  localparam EXEC5  = 3'b110;
 
   reg [2:0]          step = FETCH;
   reg [ROM_ADDR-1:0] PC   = 0;
@@ -235,7 +236,9 @@ module cpu
 
   logic [STACK_WIDTH - 1:0] stack_aux1, stack_aux2;
 
+  logic [31:0] brTable_offset, brTable_offset2;
   logic [31:0] call_PC;
+
   task call_return;
     // Set program counter to next instruction after function call
     PC <= callStack_out_PC;
@@ -314,7 +317,7 @@ module cpu
       blockStack_op   <= `POP;
       blockStack_data <= depth-1;  // Remove all slices except the desired one
 
-      step <= EXEC2;
+      step <= (opcode == `op_br_table) ? EXEC4 : EXEC2;
     end
 
     // Current block
@@ -545,6 +548,38 @@ module cpu
                   PC <= PC+leb128_len;
               end
 
+              `op_br_table: begin
+                // Consume ToS
+                stack_op   <= `POP;
+                stack_data <= 0;
+
+                if(stack_status == `EMPTY)
+                  trap <= `STACK_EMPTY;
+
+                else if(result_type != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  brTable_offset = 4 * (leb128_out < stack_out_32
+                                      ? leb128_out
+                                      : stack_out_32);
+
+                  // // Requested label is already available, break out directly
+                  // brTable_offset2 = 6-leb128_len-brTable_offset;
+                  // if(0 <= brTable_offset2)
+                  //   block_break(rom_data[(brTable_offset2+4)*8-1:brTable_offset2*8]);
+                  //
+                  // // Search the requested label on the ROM before doing the
+                  // // break out
+                  // else begin
+                    rom_addr  <= PC + leb128_len + brTable_offset;
+                    rom_extra <= 3;
+
+                    step <= EXEC2;
+                  // end
+                end
+              end
+
               `op_return: begin
                 // Returning from main call (`start`, `export`), return results and halt
                 if(callStack_status == `EMPTY)
@@ -736,6 +771,27 @@ module cpu
                 block_break2();
             end
 
+            `op_br_table: begin
+              if(rom_error)
+                trap <= `ROM_ERROR;
+
+              // We are breaking out from the root of a function. Idiot, but who
+              // knows...
+              else if(blockStack_status == `EMPTY) begin
+                if(rom_data[31:0])
+                  trap <= `BLOCK_STACK_EMPTY;
+
+                else if(callStack_status == `EMPTY)
+                  trap <= `ENDED;
+
+                else
+                  block_return();
+              end
+
+              else
+                block_break(rom_data[31:0]);
+            end
+
             // Call operators
             `op_call: begin
               if(rom_error)
@@ -879,6 +935,10 @@ module cpu
           step <= FETCH;
 
           case (opcode)
+            `op_br_table: begin
+              step <= EXEC5;
+            end
+
             // Parametric operators
             `op_select: begin
               // Validate both operators are of the same type
@@ -897,6 +957,20 @@ module cpu
                 // Second operator is already on tos, so there's no need to do
                 // anything with it
               end
+            end
+          endcase
+        end
+
+        EXEC5: begin
+          step <= FETCH;
+
+          case (opcode)
+            `op_br_table: begin
+              if(blockStack_status > `EMPTY)
+                trap <= `BLOCK_STACK_ERROR;
+
+              else
+                block_break2();
             end
           endcase
         end
