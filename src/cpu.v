@@ -249,7 +249,6 @@ module cpu
   logic [31:0] brTable_offset, brTable_offset2;
   logic [31:0] call_PC;
 
-  // TODO try to unify with `block_return`. Check for ranges
   task call_return;
     // Main call (`start`, `export`), return results and halt
     if(callStack_status == `EMPTY)
@@ -265,54 +264,42 @@ module cpu
       stack_upper <= callStack_out_upper;
       stack_lower <= callStack_out_lower;
 
-      // Set program counter to next instruction after function call
-      PC <= callStack_out_PC;
-
-      // Reset main stack
-      callStack_op   <= `POP;
-      callStack_data <= 0;
-
-      stack_offset    <= callStack_out_index;
-      stack_underflow <= callStack_out_underflow;
-
-      // Check type and set result value
-      if(callStack_out_returnType == 7'h40)
-        stack_op <= `INDEX_RESET;
-
-      else if(7'h7f - callStack_out_returnType == result_type) begin
-        stack_op   <= `INDEX_RESET_AND_PUSH;
-        stack_data <= stack_out;
-      end
-
-      else
-        trap <= `TYPE_MISMATCH;
+      block_return(callStack_out, 1);
     end
   endtask
 
-  // TODO try to unify with `call_return`. Check for ranges
   task block_return;
+    input [RETURN_H:UNDERFLOW_L] stackSlice;
+    input isCallReturn;
+
     reg [STACK_WIDTH-1:0] data;
     data = (opcode == `op_br_if) ? stack_out1 : stack_out;
 
-    // Set program counter to next instruction after block
-    PC <= blockStack_out_PC;
+    // Set program counter to next instruction after block or function call
+    PC <= stackSlice[PC_H:PC_L];
 
     // Reset main stack
-    blockStack_op   <= `POP;
-    blockStack_data <= 0;
+    if(isCallReturn) begin
+      callStack_op   <= `POP;
+      callStack_data <= 0;
+    end
+    else begin
+      blockStack_op   <= `POP;
+      blockStack_data <= 0;
+    end
 
-    stack_offset    <= blockStack_out_index;
-    stack_underflow <= blockStack_out_underflow;
+    stack_offset    <= stackSlice[    INDEX_H:    INDEX_L];
+    stack_underflow <= stackSlice[UNDERFLOW_H:UNDERFLOW_L];
 
     // Check type and set result value
     // TODO "At the end of the block the remaining inner operands must match the
     // block signature". Should we check and use the actual stack status instead
     // of the expected output? Are we in fact relocating the stack data, or are
     // we just overwritting it?
-    if(blockStack_out_returnType == 7'h40)
+    if(stackSlice[RETURN_H:RETURN_L] == 7'h40)
       stack_op <= `INDEX_RESET;
 
-    else if(7'h7f - blockStack_out_returnType == data[65:64]) begin
+    else if(7'h7f - stackSlice[RETURN_H:RETURN_L] == data[65:64]) begin
       stack_op   <= `INDEX_RESET_AND_PUSH;
       stack_data <= data;
     end
@@ -363,7 +350,7 @@ module cpu
     else
       case (blockStack_out_type)
         `block,
-        `block_if  : block_return();
+        `block_if  : block_return(blockStack_out, 0);
         `block_loop: block_loop_back();
 
         default:
@@ -482,7 +469,7 @@ module cpu
                   trap <= `BAD_BLOCK_TYPE;
 
                 else
-                  block_return();
+                  block_return(blockStack_out, 0);
               end
 
               `op_end: begin
@@ -496,7 +483,7 @@ module cpu
 
                 // Block or if
                 else
-                  block_return();
+                  block_return(blockStack_out, 0);
               end
 
               `op_br: block_break(leb128_out);
