@@ -244,8 +244,6 @@ module cpu
   reg [ROM_ADDR-1:0] PC   = 0;
   reg [7:0]          opcode;
 
-  logic [STACK_WIDTH - 1:0] stack_aux1;
-
   logic [31:0] brTable_offset, brTable_offset2;
   logic [31:0] call_PC;
 
@@ -682,21 +680,54 @@ module cpu
                 end
               end
 
-              // Binary and ternary operations
+              // Binary operations - 32 bits
               `op_i32_eq,
               `op_i32_ne,
+              `op_i32_add,
+              `op_i32_sub:
+              begin
+                if(stack_out[65:64] != `i32 || stack_out1[65:64] != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op     <= `INDEX_RESET_AND_PUSH;
+                  stack_offset <= stack_index - 2;
+
+                  case(opcode)
+                    // Comparison operators
+                    `op_i32_eq: stack_data <= {`i32, (stack_out[31:0] == stack_out1[31:0]) ? 64'b1 : 64'b0};
+                    `op_i32_ne: stack_data <= {`i32, (stack_out[31:0] != stack_out1[31:0]) ? 64'b1 : 64'b0};
+
+                    // Numeric operators
+                    `op_i32_add: stack_data <= {`i32, stack_out[31:0] + stack_out1[31:0]};
+                    `op_i32_sub: stack_data <= {`i32, stack_out1[31:0] - stack_out[31:0]};
+                  endcase
+                end
+              end
+
+              // Binary operations - 64 bits
               `op_i64_eq,
               `op_i64_ne,
-              `op_i32_add,
-              `op_i32_sub,
               `op_i64_add,
               `op_i64_sub:
               begin
-                stack_aux1 <= stack_out;
-                stack_op   <= `POP;
-                stack_data <= 0;
+                if(stack_out[65:64] != `i64 || stack_out1[65:64] != `i64)
+                  trap <= `TYPE_MISMATCH;
 
-                step <= EXEC2;
+                else begin
+                  stack_op     <= `INDEX_RESET_AND_PUSH;
+                  stack_offset <= stack_index - 2;
+
+                  case(opcode)
+                    // Comparison operators
+                    `op_i64_eq: stack_data <= {`i64, (stack_out[63:0] == stack_out1[63:0]) ? 64'b1 : 64'b0};
+                    `op_i64_ne: stack_data <= {`i64, (stack_out[63:0] != stack_out1[63:0]) ? 64'b1 : 64'b0};
+
+                    // Numeric operators
+                    `op_i64_add: stack_data <= {`i64, stack_out[63:0] + stack_out1[63:0]};
+                    `op_i64_sub: stack_data <= {`i64, stack_out1[63:0] - stack_out[63:0]};
+                  endcase
+                end
               end
 
               // Unknown opcode
@@ -767,96 +798,6 @@ module cpu
               else begin
                 stack_op   <= `PUSH;
                 stack_data <= stack_out;
-              end
-            end
-
-            // Comparison operators
-            `op_i32_eq:
-            begin
-              if(stack_aux1[65:64] != `i32 || result_type != `i32)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i32, (stack_aux1[31:0] == stack_out_32) ? 64'b1 : 64'b0};
-              end
-            end
-
-            `op_i32_ne:
-            begin
-              if(stack_aux1[65:64] != `i32 || result_type != `i32)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i32, (stack_aux1[31:0] != stack_out_32) ? 64'b1 : 64'b0};
-              end
-            end
-
-            `op_i64_eq:
-            begin
-              if(stack_aux1[65:64] != `i64 || result_type != `i64)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i64, (stack_aux1[63:0] == stack_out_64) ? 64'b1 : 64'b0};
-              end
-            end
-
-            `op_i64_ne:
-            begin
-              if(stack_aux1[65:64] != `i64 || result_type != `i64)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i64, (stack_aux1[63:0] != stack_out_64) ? 64'b1 : 64'b0};
-              end
-            end
-
-            // Numeric operators
-            `op_i32_add:
-            begin
-              if(stack_aux1[65:64] != `i32 || result_type != `i32)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i32, stack_aux1[31:0] + stack_out_32};
-              end
-            end
-
-            `op_i32_sub:
-            begin
-              if(stack_aux1[65:64] != `i32 || result_type != `i32)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i32, stack_out_32 - stack_aux1[31:0]};
-              end
-            end
-
-            `op_i64_add:
-            begin
-              if(stack_aux1[65:64] != `i64 || result_type != `i64)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i64, stack_aux1[63:0] + stack_out_64};
-              end
-            end
-
-            `op_i64_sub:
-            begin
-              if(stack_aux1[65:64] != `i64 || result_type != `i64)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i64, stack_out_64 - stack_aux1[63:0]};
               end
             end
           endcase

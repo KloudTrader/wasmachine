@@ -28,7 +28,7 @@ module cpu_tb();
     $dumpfile("i32.ne1_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #28
+    #24
     `assert(result, 0);
     `assert(result_empty, 0);
 
