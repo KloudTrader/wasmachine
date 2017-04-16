@@ -436,7 +436,7 @@ module cpu
               end
 
               `op_loop: begin
-                PC = PC+5;
+                PC = PC+1;
 
                 block_add(PC, `block_loop);
               end
