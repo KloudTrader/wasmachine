@@ -19,7 +19,10 @@ module cpu
   output wire [         63:0] result,
   output wire [          1:0] result_type,
   output wire                 result_empty,
-  output reg  [          3:0] trap = `NONE
+  output reg  [          3:0] trap = `NONE,
+
+  input wire        pushStack,
+  input wire [65:0] stack_in
 );
 
   // ROM
@@ -372,6 +375,10 @@ module cpu
 
   // Main loop
   always @(posedge clk) begin
+    stack_op      <= `NONE;
+    blockStack_op <= `NONE;
+    callStack_op  <= `NONE;
+
     if(reset) begin
       trap <= `NONE;
       step <= FETCH;
@@ -380,7 +387,6 @@ module cpu
       blockStack_offset    <= 0;
       blockStack_underflow <= 0;
 
-      // TODO find a way to set function arguments
       stack_op <= `INDEX_RESET;
       stack_offset    <= index;
       stack_underflow <= index;
@@ -388,11 +394,12 @@ module cpu
       stack_lower     <= 0;
     end
 
-    else if(!trap) begin
-      stack_op      <= `NONE;
-      blockStack_op <= `NONE;
-      callStack_op  <= `NONE;
+    else if(pushStack) begin
+      stack_op   <= `PUSH;
+      stack_data <= stack_in;
+    end
 
+    else if(!trap)
       case (step)
         FETCH: begin
           rom_addr  <= PC;
@@ -821,6 +828,5 @@ module cpu
           endcase
         end
       endcase
-    end
   end
 endmodule
