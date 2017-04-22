@@ -204,14 +204,21 @@ module cpu
               // Reinterpretations
               `op_i32_reinterpret_f32: begin
                 stack_op <= `REPLACE;
-                stack_data <= {`f32, stack_tos[63:0]};
+                stack_data <= {`i32, 32'b0, stack_tos[31:0]};
+
+                step <= FETCH;
+              end
+
+              `op_i64_reinterpret_f64: begin
+                stack_op <= `REPLACE;
+                stack_data <= {`i64, stack_tos[63:0]};
 
                 step <= FETCH;
               end
 
               `op_f32_reinterpret_i32: begin
                 stack_op <= `REPLACE;
-                stack_data <= {`i32, stack_tos[63:0]};
+                stack_data <= {`f32, 32'b0, stack_tos[31:0]};
 
                 step <= FETCH;
               end

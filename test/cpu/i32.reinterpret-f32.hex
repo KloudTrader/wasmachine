@@ -1,6 +1,7 @@
-41 80 80 80 80 0c  // i32.const           -1073741824
-bc                 // i32.reinterpret/f32 -2
-0b                 // end
+43 c0 00 00 00  // f32.const           -2
+bc              // i32.reinterpret/f32 -1073741824
+0b              // end
+00
 00
 00
 00

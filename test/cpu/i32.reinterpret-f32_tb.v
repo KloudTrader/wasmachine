@@ -34,7 +34,7 @@ module cpu_tb();
 
     #30
     `assert(result, 32'hc0000000);
-    `assert(result_type, `f32);
+    `assert(result_type, `i32);
     `assert(result_empty, 0);
 
     $display("ok");

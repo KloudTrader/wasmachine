@@ -13,7 +13,7 @@ module cpu_tb();
   wire [ 2:0] trap;
 
   cpu #(
-    .ROM_FILE("f32.reinterpret-i32.hex"),
+    .ROM_FILE("i64.reinterpret-f64.hex"),
     .ROM_ADDR(4)
   )
   dut
@@ -29,12 +29,12 @@ module cpu_tb();
   always #1 clk = ~clk;
 
   initial begin
-    $dumpfile("f32.reinterpret-i32_tb.vcd");
+    $dumpfile("i64.reinterpret-f64_tb.vcd");
     $dumpvars(0, cpu_tb);
 
     #30
-    `assert(result, 32'hc0000000);
-    `assert(result_type, `f32);
+    `assert(result, 64'hc000000000000000);
+    `assert(result_type, `i64);
     `assert(result_empty, 0);
 
     $display("ok");
