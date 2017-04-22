@@ -34,7 +34,7 @@ module cpu_tb();
     $dumpfile("i64.add_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #34
+    #24
     `assert(result, 3);
     `assert(result_type, `i64);
     `assert(result_empty, 0);

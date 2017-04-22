@@ -19,7 +19,10 @@ module cpu
   output wire [         63:0] result,
   output wire [          1:0] result_type,
   output wire                 result_empty,
-  output reg  [          3:0] trap = `NONE
+  output reg  [          3:0] trap = `NONE,
+
+  input wire        pushStack,
+  input wire [65:0] stack_in
 );
 
   // ROM
@@ -87,7 +90,19 @@ module cpu
   );
 
   // Block stack
-  localparam BLOCK_STACK_WIDTH = ROM_ADDR + 2 + 7 + 2*(STACK_DEPTH+1);
+  localparam UNDERFLOW_L = 0;
+  localparam UNDERFLOW_H = UNDERFLOW_L + STACK_DEPTH;
+  localparam INDEX_L     = UNDERFLOW_H + 1;
+  localparam INDEX_H     = INDEX_L     + STACK_DEPTH;
+  localparam PC_L        = INDEX_H     + 1;
+  localparam PC_H        = PC_L        + 31;
+  localparam RETURN_L    = PC_H        + 1;
+  localparam RETURN_H    = RETURN_L    + 6;
+
+  localparam TYPE_L = RETURN_H+1;
+  localparam TYPE_H = TYPE_L  +1;
+
+  localparam BLOCK_STACK_WIDTH = TYPE_H+1;
   localparam BLOCK_STACK_DEPTH = 3;
 
   reg  [                  2:0] blockStack_op;
@@ -118,8 +133,16 @@ module cpu
   );
 
   // Call stack
-  localparam CALL_STACK_WIDTH = ROM_ADDR + 7 + 2*(BLOCK_STACK_DEPTH+1) +
-                                               4*(STACK_DEPTH+1);
+  localparam LOWER_L           = RETURN_H          + 1;
+  localparam LOWER_H           = LOWER_L           + STACK_DEPTH;
+  localparam UPPER_L           = LOWER_H           + 1;
+  localparam UPPER_H           = UPPER_L           + STACK_DEPTH;
+  localparam BLOCK_UNDERFLOW_L = UPPER_H           + 1;
+  localparam BLOCK_UNDERFLOW_H = BLOCK_UNDERFLOW_L + BLOCK_STACK_DEPTH;
+  localparam BLOCK_INDEX_L     = BLOCK_UNDERFLOW_H + 1;
+  localparam BLOCK_INDEX_H     = BLOCK_INDEX_L     + BLOCK_STACK_DEPTH;
+
+  localparam CALL_STACK_WIDTH = BLOCK_INDEX_H+1;
   localparam CALL_STACK_DEPTH = 1;
 
   reg  [                 1:0] callStack_op;
@@ -193,21 +216,21 @@ module cpu
   wire[31:0] stack_out_32   = stack_out[31:0];
 
   // Block stack
-  wire[ ROM_ADDR-1:0] blockStack_out_PC         = blockStack_out[ROM_ADDR-1+9+2*(1+STACK_DEPTH)  :9+2*(1+STACK_DEPTH)];
-  wire[          1:0] blockStack_out_type       = blockStack_out[           8+2*(1+STACK_DEPTH)  :7+2*(1+STACK_DEPTH)];
-  wire[          6:0] blockStack_out_returnType = blockStack_out[           6+2*(1+STACK_DEPTH)  :  2*(1+STACK_DEPTH)];
-  wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[             2*(1+STACK_DEPTH)-1:     1+STACK_DEPTH ];
-  wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[                  STACK_DEPTH   :                  0];
+  wire[          1:0] blockStack_out_type       = blockStack_out[     TYPE_H:     TYPE_L];
+  wire[          6:0] blockStack_out_returnType = blockStack_out[   RETURN_H:   RETURN_L];
+  wire[         31:0] blockStack_out_PC         = blockStack_out[       PC_H:       PC_L];
+  wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[    INDEX_H:    INDEX_L];
+  wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[UNDERFLOW_H:UNDERFLOW_L];
 
   // Call stack
-  wire[       ROM_ADDR-1:0] callStack_out_PC             = callStack_out[ROM_ADDR-1+7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :7+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
-  wire[                6:0] callStack_out_returnType     = callStack_out[           6+2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)  :  2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)];
-  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[             2*(BLOCK_STACK_DEPTH+1)+4*(STACK_DEPTH+1)-1:     BLOCK_STACK_DEPTH+1 +4*(STACK_DEPTH+1)];
-  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[                BLOCK_STACK_DEPTH+1 +4*(STACK_DEPTH+1)-1:                          4*(1+STACK_DEPTH)];
-  wire[      STACK_DEPTH:0] callStack_out_index          = callStack_out[                                     4*(1+STACK_DEPTH)-1:                          3*(1+STACK_DEPTH)];
-  wire[      STACK_DEPTH:0] callStack_out_underflow      = callStack_out[                                     3*(1+STACK_DEPTH)-1:                          2*(1+STACK_DEPTH)];
-  wire[      STACK_DEPTH:0] callStack_out_upper          = callStack_out[                                     2*(1+STACK_DEPTH)-1:                             1+STACK_DEPTH ];
-  wire[      STACK_DEPTH:0] callStack_out_lower          = callStack_out[                                          STACK_DEPTH   :                                          0];
+  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[    BLOCK_INDEX_H:    BLOCK_INDEX_L];
+  wire[BLOCK_STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[BLOCK_UNDERFLOW_H:BLOCK_UNDERFLOW_L];
+  wire[      STACK_DEPTH:0] callStack_out_upper          = callStack_out[          UPPER_H:          UPPER_L];
+  wire[      STACK_DEPTH:0] callStack_out_lower          = callStack_out[          LOWER_H:          LOWER_L];
+  wire[                6:0] callStack_out_returnType     = callStack_out[         RETURN_H:         RETURN_L];
+  wire[               31:0] callStack_out_PC             = callStack_out[             PC_H:             PC_L];
+  wire[      STACK_DEPTH:0] callStack_out_index          = callStack_out[          INDEX_H:          INDEX_L];
+  wire[      STACK_DEPTH:0] callStack_out_underflow      = callStack_out[      UNDERFLOW_H:      UNDERFLOW_L];
 
   //
   // CPU internal status
@@ -224,12 +247,9 @@ module cpu
   reg [ROM_ADDR-1:0] PC   = 0;
   reg [7:0]          opcode;
 
-  logic [STACK_WIDTH - 1:0] stack_aux1;
-
   logic [31:0] brTable_offset, brTable_offset2;
   logic [31:0] call_PC;
 
-  // TODO try to unify with `block_return`. Check for ranges
   task call_return;
     // Main call (`start`, `export`), return results and halt
     if(callStack_status == `EMPTY)
@@ -245,54 +265,42 @@ module cpu
       stack_upper <= callStack_out_upper;
       stack_lower <= callStack_out_lower;
 
-      // Set program counter to next instruction after function call
-      PC <= callStack_out_PC;
-
-      // Reset main stack
-      callStack_op   <= `POP;
-      callStack_data <= 0;
-
-      stack_offset    <= callStack_out_index;
-      stack_underflow <= callStack_out_underflow;
-
-      // Check type and set result value
-      if(callStack_out_returnType == 7'h40)
-        stack_op <= `INDEX_RESET;
-
-      else if(7'h7f - callStack_out_returnType == result_type) begin
-        stack_op   <= `INDEX_RESET_AND_PUSH;
-        stack_data <= stack_out;
-      end
-
-      else
-        trap <= `TYPE_MISMATCH;
+      block_return(callStack_out, 1);
     end
   endtask
 
-  // TODO try to unify with `call_return`. Check for ranges
   task block_return;
+    input [RETURN_H:UNDERFLOW_L] stackSlice;
+    input isCallReturn;
+
     reg [STACK_WIDTH-1:0] data;
     data = (opcode == `op_br_if) ? stack_out1 : stack_out;
 
-    // Set program counter to next instruction after block
-    PC <= blockStack_out_PC;
+    // Set program counter to next instruction after block or function call
+    PC <= stackSlice[PC_H:PC_L];
 
     // Reset main stack
-    blockStack_op   <= `POP;
-    blockStack_data <= 0;
+    if(isCallReturn) begin
+      callStack_op   <= `POP;
+      callStack_data <= 0;
+    end
+    else begin
+      blockStack_op   <= `POP;
+      blockStack_data <= 0;
+    end
 
-    stack_offset    <= blockStack_out_index;
-    stack_underflow <= blockStack_out_underflow;
+    stack_offset    <= stackSlice[    INDEX_H:    INDEX_L];
+    stack_underflow <= stackSlice[UNDERFLOW_H:UNDERFLOW_L];
 
     // Check type and set result value
     // TODO "At the end of the block the remaining inner operands must match the
     // block signature". Should we check and use the actual stack status instead
     // of the expected output? Are we in fact relocating the stack data, or are
     // we just overwritting it?
-    if(blockStack_out_returnType == 7'h40)
+    if(stackSlice[RETURN_H:RETURN_L] == 7'h40)
       stack_op <= `INDEX_RESET;
 
-    else if(7'h7f - blockStack_out_returnType == data[65:64]) begin
+    else if(7'h7f - stackSlice[RETURN_H:RETURN_L] == data[65:64]) begin
       stack_op   <= `INDEX_RESET_AND_PUSH;
       stack_data <= data;
     end
@@ -343,7 +351,7 @@ module cpu
     else
       case (blockStack_out_type)
         `block,
-        `block_if  : block_return();
+        `block_if  : block_return(blockStack_out, 0);
         `block_loop: block_loop_back();
 
         default:
@@ -358,7 +366,7 @@ module cpu
     // Store current status on the blocks stack
     blockStack_op   <= `PUSH;
     // TODO should we use relative addresses for destination?
-    blockStack_data <= {block_PC, block_type, leb128_out[6:0], stack_index,
+    blockStack_data <= {block_type, leb128_out[6:0], block_PC, stack_index,
                         stack_underflow};
 
     // Set an empty stack for the block
@@ -367,6 +375,10 @@ module cpu
 
   // Main loop
   always @(posedge clk) begin
+    stack_op      <= `NONE;
+    blockStack_op <= `NONE;
+    callStack_op  <= `NONE;
+
     if(reset) begin
       trap <= `NONE;
       step <= FETCH;
@@ -375,7 +387,6 @@ module cpu
       blockStack_offset    <= 0;
       blockStack_underflow <= 0;
 
-      // TODO find a way to set function arguments
       stack_op <= `INDEX_RESET;
       stack_offset    <= index;
       stack_underflow <= index;
@@ -383,11 +394,12 @@ module cpu
       stack_lower     <= 0;
     end
 
-    else if(!trap) begin
-      stack_op      <= `NONE;
-      blockStack_op <= `NONE;
-      callStack_op  <= `NONE;
+    else if(pushStack) begin
+      stack_op   <= `PUSH;
+      stack_data <= stack_in;
+    end
 
+    else if(!trap)
       case (step)
         FETCH: begin
           rom_addr  <= PC;
@@ -429,7 +441,7 @@ module cpu
               end
 
               `op_loop: begin
-                PC = PC+5;
+                PC = PC+1;
 
                 block_add(PC, `block_loop);
               end
@@ -462,7 +474,7 @@ module cpu
                   trap <= `BAD_BLOCK_TYPE;
 
                 else
-                  block_return();
+                  block_return(blockStack_out, 0);
               end
 
               `op_end: begin
@@ -476,7 +488,7 @@ module cpu
 
                 // Block or if
                 else
-                  block_return();
+                  block_return(blockStack_out, 0);
               end
 
               `op_br: block_break(leb128_out);
@@ -713,21 +725,54 @@ module cpu
                 end
               end
 
-              // Binary and ternary operations
+              // Binary operations - 32 bits
               `op_i32_eq,
               `op_i32_ne,
+              `op_i32_add,
+              `op_i32_sub:
+              begin
+                if(stack_out[65:64] != `i32 || stack_out1[65:64] != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op     <= `INDEX_RESET_AND_PUSH;
+                  stack_offset <= stack_index - 2;
+
+                  case(opcode)
+                    // Comparison operators
+                    `op_i32_eq: stack_data <= {`i32, (stack_out[31:0] == stack_out1[31:0]) ? 64'b1 : 64'b0};
+                    `op_i32_ne: stack_data <= {`i32, (stack_out[31:0] != stack_out1[31:0]) ? 64'b1 : 64'b0};
+
+                    // Numeric operators
+                    `op_i32_add: stack_data <= {`i32, stack_out[31:0] + stack_out1[31:0]};
+                    `op_i32_sub: stack_data <= {`i32, stack_out1[31:0] - stack_out[31:0]};
+                  endcase
+                end
+              end
+
+              // Binary operations - 64 bits
               `op_i64_eq,
               `op_i64_ne,
-              `op_i32_add,
-              `op_i32_sub,
               `op_i64_add,
               `op_i64_sub:
               begin
-                stack_aux1 <= stack_out;
-                stack_op   <= `POP;
-                stack_data <= 0;
+                if(stack_out[65:64] != `i64 || stack_out1[65:64] != `i64)
+                  trap <= `TYPE_MISMATCH;
 
-                step <= EXEC2;
+                else begin
+                  stack_op     <= `INDEX_RESET_AND_PUSH;
+                  stack_offset <= stack_index - 2;
+
+                  case(opcode)
+                    // Comparison operators
+                    `op_i64_eq: stack_data <= {`i64, (stack_out[63:0] == stack_out1[63:0]) ? 64'b1 : 64'b0};
+                    `op_i64_ne: stack_data <= {`i64, (stack_out[63:0] != stack_out1[63:0]) ? 64'b1 : 64'b0};
+
+                    // Numeric operators
+                    `op_i64_add: stack_data <= {`i64, stack_out[63:0] + stack_out1[63:0]};
+                    `op_i64_sub: stack_data <= {`i64, stack_out1[63:0] - stack_out[63:0]};
+                  endcase
+                end
               end
 
               // Unknown opcode
@@ -776,11 +821,11 @@ module cpu
                 // TODO Spec says "A direct call to a function with a mismatched
                 //      signature is a module verification error". Should return
                 //       value be verified, or it's already done at loading?
-                callStack_data <= {call_PC, rom_data_returnType,
-                                   blockStack_index, blockStack_underflow,
-                                   stack_index - rom_data_arguments[STACK_DEPTH:0],
-                                   stack_underflow, stack_upper,
-                                   stack_lower};
+                callStack_data <= {blockStack_index, blockStack_underflow,
+                                   stack_upper, stack_lower,
+                                   rom_data_returnType, call_PC,
+                                   stack_index-rom_data_arguments[STACK_DEPTH:0],
+                                   stack_underflow};
 
                 // Set empty stacks for the called function
                 blockStack_underflow <= blockStack_index;
@@ -798,96 +843,6 @@ module cpu
               else begin
                 stack_op   <= `PUSH;
                 stack_data <= stack_out;
-              end
-            end
-
-            // Comparison operators
-            `op_i32_eq:
-            begin
-              if(stack_aux1[65:64] != `i32 || result_type != `i32)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i32, (stack_aux1[31:0] == stack_out_32) ? 64'b1 : 64'b0};
-              end
-            end
-
-            `op_i32_ne:
-            begin
-              if(stack_aux1[65:64] != `i32 || result_type != `i32)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i32, (stack_aux1[31:0] != stack_out_32) ? 64'b1 : 64'b0};
-              end
-            end
-
-            `op_i64_eq:
-            begin
-              if(stack_aux1[65:64] != `i64 || result_type != `i64)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i64, (stack_aux1[63:0] == stack_out_64) ? 64'b1 : 64'b0};
-              end
-            end
-
-            `op_i64_ne:
-            begin
-              if(stack_aux1[65:64] != `i64 || result_type != `i64)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i64, (stack_aux1[63:0] != stack_out_64) ? 64'b1 : 64'b0};
-              end
-            end
-
-            // Numeric operators
-            `op_i32_add:
-            begin
-              if(stack_aux1[65:64] != `i32 || result_type != `i32)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i32, stack_aux1[31:0] + stack_out_32};
-              end
-            end
-
-            `op_i32_sub:
-            begin
-              if(stack_aux1[65:64] != `i32 || result_type != `i32)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i32, stack_out_32 - stack_aux1[31:0]};
-              end
-            end
-
-            `op_i64_add:
-            begin
-              if(stack_aux1[65:64] != `i64 || result_type != `i64)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i64, stack_aux1[63:0] + stack_out_64};
-              end
-            end
-
-            `op_i64_sub:
-            begin
-              if(stack_aux1[65:64] != `i64 || result_type != `i64)
-                trap <= `TYPE_MISMATCH;
-
-              else begin
-                stack_op   <= `REPLACE;
-                stack_data <= {`i64, stack_out_64 - stack_aux1[63:0]};
               end
             end
           endcase
@@ -911,6 +866,5 @@ module cpu
           endcase
         end
       endcase
-    end
   end
 endmodule
