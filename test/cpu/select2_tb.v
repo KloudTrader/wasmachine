@@ -7,7 +7,7 @@ module cpu_tb();
   reg         reset = 0;
   wire [63:0] result;
   wire        result_empty;
-  wire [ 2:0] trap;
+  wire [ 3:0] trap;
 
   cpu #(
     .ROM_FILE("select2.hex"),
@@ -28,11 +28,10 @@ module cpu_tb();
     $dumpfile("select2_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #60
+    #30
     `assert(result, 2);
     `assert(result_empty, 0);
 
-    $display("ok");
     $finish;
   end
 

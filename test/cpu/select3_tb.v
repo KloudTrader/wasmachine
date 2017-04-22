@@ -1,5 +1,7 @@
 `include "assert.vh"
 
+`include "cpu.vh"
+
 
 module cpu_tb();
 
@@ -7,7 +9,7 @@ module cpu_tb();
   reg         reset = 0;
   wire [63:0] result;
   wire        result_empty;
-  wire [ 2:0] trap;
+  wire [ 3:0] trap;
 
   cpu #(
     .ROM_FILE("select3.hex"),
@@ -28,10 +30,9 @@ module cpu_tb();
     $dumpfile("select3_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #50
-    `assert(trap, 6);
+    #24
+    `assert(trap, `TYPES_MISMATCH);
 
-    $display("ok");
     $finish;
   end
 

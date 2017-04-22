@@ -10,7 +10,7 @@ module cpu_tb();
   wire [63:0] result;
   wire [ 1:0] result_type;
   wire        result_empty;
-  wire [ 2:0] trap;
+  wire [ 3:0] trap;
 
   cpu #(
     .ROM_FILE("i32.reinterpret-f32.hex"),
@@ -32,12 +32,11 @@ module cpu_tb();
     $dumpfile("i32.reinterpret-f32_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #30
+    #18
     `assert(result, 32'hc0000000);
     `assert(result_type, `i32);
     `assert(result_empty, 0);
 
-    $display("ok");
     $finish;
   end
 

@@ -15,12 +15,14 @@ module genrom #(     // Parameters
   parameter DW = 8,  // Data witdh in bits
   parameter EXTRA = 4
 )
-(                                        // Ports
-  input                         clk,     // Global clock signal
-  input  wire [AW-1:0]          addr,    // Address
-  input  wire [EXTRA-1:0]       extra,   // Length of data to be fetch
-  output logic[2**EXTRA*DW-1:0] data=0,  // Output data
-  output logic                  error    // none / extra out of limits
+(                                             // Ports
+  input                         clk,          // Global clock signal
+  input  wire [         AW-1:0] addr,         // Address
+  input  wire [      EXTRA-1:0] extra,        // Length of data to be fetch
+  input  wire [         AW-1:0] lower_bound,
+  input  wire [         AW-1:0] upper_bound,
+  output reg  [2**EXTRA*DW-1:0] data=0,       // Output data
+  output reg                    error=0       // none / out of limits
 );
 
   // Parameter: name of the file with the ROM content
@@ -34,7 +36,7 @@ module genrom #(     // Parameters
 
   // Read the memory
   always @(posedge clk) begin
-    error <= addr + extra >= NPOS;
+    error <= addr < lower_bound || addr > upper_bound;
 
     case (extra)
       0: data <=  rom[addr   ];

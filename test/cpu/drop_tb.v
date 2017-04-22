@@ -7,7 +7,7 @@ module cpu_tb();
   reg         reset = 0;
   wire [63:0] result;
   wire        result_empty;
-  wire [ 2:0] trap;
+  wire [ 3:0] trap;
 
   cpu #(
     .ROM_FILE("drop.hex"),
@@ -28,10 +28,9 @@ module cpu_tb();
     $dumpfile("drop_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #30
+    #18
     `assert(result_empty, 1);
 
-    $display("ok");
     $finish;
   end
 
