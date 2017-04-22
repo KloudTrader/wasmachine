@@ -216,6 +216,13 @@ module cpu
                 step <= FETCH;
               end
 
+              `op_f64_reinterpret_i64: begin
+                stack_op <= `REPLACE;
+                stack_data <= {`i64, stack_tos[63:0]};
+
+                step <= FETCH;
+              end
+
               // Unknown opcode
               default:
                 trap <= 4;

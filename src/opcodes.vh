@@ -38,3 +38,4 @@
 // Reinterpretations
 `define op_i32_reinterpret_f32 8'hbc
 `define op_f32_reinterpret_i32 8'hbe
+`define op_f64_reinterpret_i64 8'hbf
