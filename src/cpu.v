@@ -8,49 +8,30 @@
 
 module cpu
 #(
-  parameter ROM_ADDR    = 4,
+  parameter MEM_DEPTH   = 3,
   parameter STACK_DEPTH = 7
 )
 (
-  input  wire                 clk,
-  input  wire                 reset,
-  input  wire [ ROM_ADDR-1:0] pc,
+  input clk,
+  input reset,
+
+  input  wire [  MEM_DEPTH:0] pc,
   input  wire [STACK_DEPTH:0] index,
   output wire [         63:0] result,
   output wire [          1:0] result_type,
   output wire                 result_empty,
   output reg  [          3:0] trap = `NONE,
 
+  output reg [     MEM_DEPTH  :0] mem_addr,
+  output reg [     MEM_EXTRA-1:0] mem_extra,
+  input      [8*2**MEM_EXTRA-1:0] mem_data,
+  input                           mem_error,
+
   input wire        pushStack,
   input wire [65:0] stack_in
 );
 
-  // ROM
-  parameter ROM_FILE = "prog.list";
-
-  localparam ROM_WIDTH = 8;
-  localparam ROM_EXTRA = 4;
-
-  reg  [ROM_ADDR-1:0]               rom_addr;
-  reg  [ROM_EXTRA-1:0]              rom_extra;
-  wire [2**ROM_EXTRA*ROM_WIDTH-1:0] rom_data;
-  wire                              rom_error;
-
-  genrom #(
-    .ROMFILE(ROM_FILE),
-    .AW(ROM_ADDR),
-    .DW(ROM_WIDTH),
-    .EXTRA(ROM_EXTRA)
-  )
-  ROM (
-    .clk(clk),
-    .addr(rom_addr),
-    .extra(rom_extra),
-    .lower_bound(4'h0),
-    .upper_bound(4'hf),
-    .data(rom_data),
-    .error(rom_error)
-  );
+  localparam MEM_EXTRA = $clog2(11);
 
   // Stack
   localparam STACK_WIDTH = 66;
@@ -95,7 +76,7 @@ module cpu
   localparam INDEX_L     = UNDERFLOW_H + 1;
   localparam INDEX_H     = INDEX_L     + STACK_DEPTH;
   localparam PC_L        = INDEX_H     + 1;
-  localparam PC_H        = PC_L        + 31;
+  localparam PC_H        = PC_L        + MEM_DEPTH;
   localparam RETURN_L    = PC_H        + 1;
   localparam RETURN_H    = RETURN_L    + 6;
 
@@ -167,10 +148,10 @@ module cpu
   wire[63:0] leb128_out;
   wire[ 3:0] leb128_len;
 
-  unpack_i64 leb128(rom_data[79:72], rom_data[71:64], rom_data[63:56],
-                    rom_data[55:48], rom_data[47:40], rom_data[39:32],
-                    rom_data[31:24], rom_data[23:16], rom_data[15: 8],
-                    rom_data[ 7: 0], leb128_out, leb128_len);
+  unpack_i64 leb128(mem_data[79:72], mem_data[71:64], mem_data[63:56],
+                    mem_data[55:48], mem_data[47:40], mem_data[39:32],
+                    mem_data[31:24], mem_data[23:16], mem_data[15: 8],
+                    mem_data[ 7: 0], leb128_out, leb128_len);
 
   // Double to Float
 
@@ -201,14 +182,14 @@ module cpu
   assign result_empty = stack_status == `EMPTY;
 
   // ROM
-  wire[ 7:0] rom_data_opcode = rom_data[87:80];
+  wire[ 7:0] mem_data_opcode = mem_data[87:80];
 
-  wire[31:0] rom_data_PC = rom_data[71:40];
+  wire[MEM_DEPTH:0] mem_data_PC = mem_data[71:40];
 
-  wire[31:0] rom_data_functionAddress = rom_data[193:72];
-  wire[ 6:0] rom_data_returnType      = rom_data[ 70:64];  // High bit dropped
-  wire[31:0] rom_data_arguments       = rom_data[ 63:32];
-  wire[31:0] rom_data_localEntries    = rom_data[ 31: 0];
+  wire[MEM_DEPTH:0] mem_data_functionAddress = mem_data[103:72];
+  wire[        6:0] mem_data_returnType      = mem_data[ 70:64];  // High bit dropped
+  wire[MEM_DEPTH:0] mem_data_arguments       = mem_data[ 63:32];
+  wire[MEM_DEPTH:0] mem_data_localEntries    = mem_data[ 31: 0];
 
   // Stack
   wire[ 1:0] stack_out_type = stack_out[65:64];
@@ -218,7 +199,7 @@ module cpu
   // Block stack
   wire[          1:0] blockStack_out_type       = blockStack_out[     TYPE_H:     TYPE_L];
   wire[          6:0] blockStack_out_returnType = blockStack_out[   RETURN_H:   RETURN_L];
-  wire[         31:0] blockStack_out_PC         = blockStack_out[       PC_H:       PC_L];
+  wire[  MEM_DEPTH:0] blockStack_out_PC         = blockStack_out[       PC_H:       PC_L];
   wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[    INDEX_H:    INDEX_L];
   wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[UNDERFLOW_H:UNDERFLOW_L];
 
@@ -243,12 +224,12 @@ module cpu
   localparam EXEC4  = 3'b101;
   localparam EXEC5  = 3'b110;
 
-  reg [2:0]          step = FETCH;
-  reg [ROM_ADDR-1:0] PC   = 0;
-  reg [7:0]          opcode;
+  reg [        2:0] step = FETCH;
+  reg [MEM_DEPTH:0] PC   = 0;
+  reg [        7:0] opcode;
 
-  logic [31:0] brTable_offset, brTable_offset2;
-  logic [31:0] call_PC;
+  reg [MEM_DEPTH:0] brTable_offset, brTable_offset2;
+  reg [MEM_DEPTH:0] call_PC;
 
   task call_return;
     // Main call (`start`, `export`), return results and halt
@@ -319,7 +300,7 @@ module cpu
   endtask
 
   task block_break;
-    input [31:0] depth;
+    input [MEM_DEPTH:0] depth;
 
     // Breaking out from the root of a function
     if(blockStack_status == `EMPTY) begin
@@ -360,8 +341,8 @@ module cpu
   endtask
 
   task block_add;
-    input [31:0] block_PC;
-    input [ 1:0] block_type;
+    input [MEM_DEPTH:0] block_PC;
+    input [        1:0] block_type;
 
     // Store current status on the blocks stack
     blockStack_op   <= `PUSH;
@@ -402,8 +383,8 @@ module cpu
     else if(!trap)
       case (step)
         FETCH: begin
-          rom_addr  <= PC;
-          rom_extra <= 10;
+          mem_addr  <= PC;
+          mem_extra <= 10;
 
           PC <= PC+1;
           step <= FETCH2;
@@ -417,12 +398,12 @@ module cpu
         end
 
         EXEC: begin
-          if(rom_error) trap <= `ROM_ERROR;
+          if(mem_error) trap <= `MEM_ERROR;
 
           else begin
             step <= FETCH;
 
-            opcode = rom_data_opcode;
+            opcode = mem_data_opcode;
 
             // Operations
             case (opcode)
@@ -435,7 +416,7 @@ module cpu
               end
 
               `op_block: begin
-                block_add(rom_data_PC, `block);
+                block_add(mem_data_PC, `block);
 
                 PC <= PC+5;
               end
@@ -452,8 +433,8 @@ module cpu
 
                 else begin
                   // Add stack slice if conditional is true or we have an `else`
-                  if(stack_out_32 || rom_data[39:8])
-                    block_add(rom_data_PC, `block_if);
+                  if(stack_out_32 || mem_data[39:8])
+                    block_add(mem_data_PC, `block_if);
 
                   // Conditional is true, go to `true` block
                   if(stack_out_32)
@@ -462,7 +443,7 @@ module cpu
                   // Conditional is `false`
                   else
                     // Go to begin of `else` block or end of `if` conditional
-                    PC <= rom_data[39:8] ? rom_data[39:8] : rom_data_PC;
+                    PC <= mem_data[39:8] ? mem_data[39:8] : mem_data_PC;
                 end
               end
 
@@ -491,7 +472,7 @@ module cpu
                   block_return(blockStack_out, 0);
               end
 
-              `op_br: block_break(leb128_out);
+              `op_br: block_break(leb128_out[MEM_DEPTH:0]);
 
               `op_br_if: begin
                 // Consume ToS
@@ -506,7 +487,7 @@ module cpu
 
                 // Condition is `true`, do the break
                 else if(stack_out_32)
-                  block_break(leb128_out);
+                  block_break(leb128_out[MEM_DEPTH:0]);
 
                 // Condition is `false`, don't break
                 else
@@ -532,13 +513,13 @@ module cpu
                   // // Requested label is already available, break out directly
                   // brTable_offset2 = 6-leb128_len-brTable_offset;
                   // if(0 <= brTable_offset2)
-                  //   block_break(rom_data[(brTable_offset2+4)*8-1:brTable_offset2*8]);
+                  //   block_break(mem_data[(brTable_offset2+4)*8-1:brTable_offset2*8]);
                   //
                   // // Search the requested label on the ROM before doing the
                   // // break out
                   // else begin
-                    rom_addr  <= PC + leb128_len + brTable_offset;
-                    rom_extra <= 3;
+                    mem_addr  <= PC + leb128_len + brTable_offset;
+                    mem_extra <= 3;
 
                     step <= EXEC2;
                   // end
@@ -550,8 +531,8 @@ module cpu
               // Call operators
               `op_call: begin
                 // Get function metadata
-                rom_addr  <= 4 + leb128_out * 13;
-                rom_extra <= 12;
+                mem_addr  <= 4 + leb128_out * 13;
+                mem_extra <= 12;
 
                 // Store on call stack the address after the function call
                 call_PC <= PC+leb128_len;
@@ -603,7 +584,7 @@ module cpu
               // Constants
               `op_i32_const: begin
                 stack_op <= `PUSH;
-                stack_data <= {`i32, leb128_out};
+                stack_data <= {`i32, 32'b0, leb128_out[31:0]};
 
                 PC <= PC+leb128_len;
               end
@@ -617,14 +598,14 @@ module cpu
 
               `op_f32_const: begin
                 stack_op <= `PUSH;
-                stack_data <= {`f32, 32'b0, rom_data[79:48]};
+                stack_data <= {`f32, 32'b0, mem_data[79:48]};
 
                 PC <= PC+4;
               end
 
               `op_f64_const: begin
                 stack_op <= `PUSH;
-                stack_data <= {`f64, rom_data[79:16]};
+                stack_data <= {`f64, mem_data[79:16]};
 
                 PC <= PC+8;
               end
@@ -801,20 +782,20 @@ module cpu
             end
 
             `op_br_table: begin
-              if(rom_error)
-                trap <= `ROM_ERROR;
+              if(mem_error)
+                trap <= `MEM_ERROR;
 
               else
-                block_break(rom_data[31:0]);
+                block_break(mem_data[MEM_DEPTH:0]);
             end
 
             // Call operators
             `op_call: begin
-              if(rom_error)
-                trap <= `ROM_ERROR;
+              if(mem_error)
+                trap <= `MEM_ERROR;
 
               else begin
-                PC <= rom_data_functionAddress;
+                PC <= mem_data_functionAddress;
 
                 // Store block and operators stacks status on the call stack
                 callStack_op   <= `PUSH;
@@ -823,16 +804,16 @@ module cpu
                 //       value be verified, or it's already done at loading?
                 callStack_data <= {blockStack_index, blockStack_underflow,
                                    stack_upper, stack_lower,
-                                   rom_data_returnType, call_PC,
-                                   stack_index-rom_data_arguments[STACK_DEPTH:0],
+                                   mem_data_returnType, call_PC,
+                                   stack_index-mem_data_arguments,
                                    stack_underflow};
 
                 // Set empty stacks for the called function
                 blockStack_underflow <= blockStack_index;
 
-                stack_underflow <= stack_index + rom_data_localEntries - rom_data_arguments;
-                stack_upper     <= stack_index + rom_data_localEntries - rom_data_arguments;
-                stack_lower     <= stack_index                         - rom_data_arguments;
+                stack_underflow <= stack_index + mem_data_localEntries - mem_data_arguments;
+                stack_upper     <= stack_index + mem_data_localEntries - mem_data_arguments;
+                stack_lower     <= stack_index                         - mem_data_arguments;
               end
             end
 

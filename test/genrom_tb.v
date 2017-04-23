@@ -8,11 +8,11 @@ module genrom_tb();
   parameter EXTRA = 4;
 
   reg                    clk = 0;
-  logic[AW-1:0]          addr;
-  logic[EXTRA-1:0]       extra;
-  logic[AW-1:0]          lower_bound=0;
-  logic[AW-1:0]          upper_bound=9;
-  wire [EXTRA**2*DW-1:0] data;
+  logic[           AW:0] addr;
+  logic[      EXTRA-1:0] extra;
+  logic[           AW:0] lower_bound=0;
+  logic[           AW:0] upper_bound=9;
+  wire [DW*2**EXTRA-1:0] data;
   wire                   error;
 
   genrom #(

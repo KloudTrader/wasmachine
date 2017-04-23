@@ -11,16 +11,16 @@
  */
 
 module genrom #(     // Parameters
-  parameter AW = 5,  // Address width in bits
+  parameter AW = 4,  // Address width in bits
   parameter DW = 8,  // Data witdh in bits
   parameter EXTRA = 4
 )
 (                                             // Ports
   input                         clk,          // Global clock signal
-  input  wire [         AW-1:0] addr,         // Address
+  input  wire [         AW  :0] addr,         // Address
   input  wire [      EXTRA-1:0] extra,        // Length of data to be fetch
-  input  wire [         AW-1:0] lower_bound,
-  input  wire [         AW-1:0] upper_bound,
+  input  wire [         AW  :0] lower_bound,
+  input  wire [         AW  :0] upper_bound,
   output reg  [2**EXTRA*DW-1:0] data=0,       // Output data
   output reg                    error=0       // none / out of limits
 );
@@ -29,7 +29,7 @@ module genrom #(     // Parameters
   parameter ROMFILE = "prog.list";
 
   // Calc the number of total positions of memory
-  localparam NPOS = 1 << AW;
+  localparam NPOS = 1 << (AW+1);
 
   // Memory
   reg [DW-1: 0] rom [0: NPOS-1];

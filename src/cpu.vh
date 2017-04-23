@@ -13,7 +13,7 @@
 `define BLOCK_STACK_ERROR 5
 `define CALL_STACK_EMPTY  6
 `define CALL_STACK_ERROR  7
-`define ROM_ERROR         8
+`define MEM_ERROR         8
 `define UNREACHABLE       9
 `define BAD_BLOCK_TYPE    10
 `define TYPE_MISMATCH     11
