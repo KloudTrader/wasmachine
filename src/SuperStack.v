@@ -41,24 +41,20 @@ module SuperStack
   reg [WIDTH-1:0] stack [0:MAX_STACK-1];
   reg [DEPTH  :0] i;
 
-  // Adjust status when underflow limit has been changed
-  function [2:0] getStatus([DEPTH:0] index);
-    if(index == MAX_STACK)
-      getStatus = `FULL;
-    else if(index == underflow_limit)
-      getStatus = `EMPTY;
-    else if(index < underflow_limit)
-      getStatus = `UNDERFLOW;
-    else
-      getStatus = `NONE;
-  endfunction
-
   task setOutput;
     out  <= stack[index-1];
     out1 <= stack[index-2];
     out2 <= stack[index-3];
 
-    status <= getStatus(index);
+    // Adjust status when underflow limit has been changed
+    if(index == MAX_STACK)
+      status <= `FULL;
+    else if(index == underflow_limit)
+      status <= `EMPTY;
+    else if(index < underflow_limit)
+      status <= `UNDERFLOW;
+    else
+      status <= `NONE;
   endtask
 
   always @(posedge clk) begin
@@ -163,7 +159,7 @@ module SuperStack
 
             if(dropTos) index = index - 1;
 
-            status <= getStatus(index);
+            setOutput();
           end
         end
       endcase

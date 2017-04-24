@@ -239,7 +239,7 @@ module SuperStack_tb();
     upper_limit <= 1;
     #2
     `assert(status, `EMPTY);
-    `assert(out   , 8'h0b);
+    `assert(out   , 8'h0c);
     `assert(index , 1);
 
     op <= `NONE;
