@@ -151,9 +151,11 @@ test/cpu/conversions: test/cpu/f32.demote-f64
 test/cpu/f32.demote-f64: $(BUILD)/cpu/f32.demote-f64_tb.vcd
 
 test/cpu/reinterpretations: test/cpu/i32.reinterpret-f32 \
+														test/cpu/i64.reinterpret-f64 \
 														test/cpu/f32.reinterpret-i32 \
 														test/cpu/f64.reinterpret-i64
 test/cpu/i32.reinterpret-f32: $(BUILD)/cpu/i32.reinterpret-f32_tb.vcd
+test/cpu/i64.reinterpret-f64: $(BUILD)/cpu/i64.reinterpret-f64_tb.vcd
 test/cpu/f32.reinterpret-i32: $(BUILD)/cpu/f32.reinterpret-i32_tb.vcd
 test/cpu/f64.reinterpret-i64: $(BUILD)/cpu/f64.reinterpret-i64_tb.vcd
 

@@ -47,7 +47,7 @@ module cpu_tb();
   wire [63:0] result;
   wire [ 1:0] result_type;
   wire        result_empty;
-  wire [ 2:0] trap;
+  wire [ 3:0] trap;
 
   cpu #(
     .MEM_DEPTH(MEM_ADDR)
@@ -77,7 +77,6 @@ module cpu_tb();
     `assert(result_type, `i64);
     `assert(result_empty, 0);
 
-    $display("ok");
     $finish;
   end
 
