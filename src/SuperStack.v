@@ -57,6 +57,12 @@ module SuperStack
       status <= `NONE;
   endtask
 
+  task zeroedIndex;
+    // New index is greater than current one, fill with zeroes
+    for(i=index; i < offset; i = i + 1)
+      stack[i] = 0;
+  endtask
+
   always @(posedge clk) begin
     if (reset) begin
       index  <= 0;
@@ -107,9 +113,7 @@ module SuperStack
 
         `INDEX_RESET:
         begin
-          // New index is greater than current one, fill with zeroes
-          for(i=index; i < offset; i = i + 1)
-            stack[i] = 0;
+          zeroedIndex();
 
           index = offset;
 
@@ -123,9 +127,7 @@ module SuperStack
             status <= `OVERFLOW;
 
           else begin
-            // New index is greater than current one, fill with zeroes
-            for(i=index; i < offset; i = i + 1)
-              stack[i] = 0;
+            zeroedIndex();
 
             stack[offset] = data;
 
