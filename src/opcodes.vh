@@ -56,10 +56,42 @@
 `define op_i64_ge_u 8'h5a
 
 // Numeric operators
-`define op_i32_add  8'h6a
-`define op_i32_sub  8'h6b
-`define op_i64_add  8'h7c
-`define op_i64_sub  8'h7d
+`define op_i32_clz    8'h67
+`define op_i32_ctz    8'h68
+`define op_i32_popcnt 8'h69
+`define op_i32_add    8'h6a
+`define op_i32_sub    8'h6b
+`define op_i32_mul    8'h6c
+`define op_i32_div_s  8'h6d
+`define op_i32_div_u  8'h6e
+`define op_i32_rem_s  8'h6f
+`define op_i32_rem_u  8'h70
+`define op_i32_and    8'h71
+`define op_i32_or     8'h72
+`define op_i32_xor    8'h73
+`define op_i32_shl    8'h74
+`define op_i32_shr_s  8'h75
+`define op_i32_shr_u  8'h76
+`define op_i32_rotl   8'h77
+`define op_i32_rotr   8'h78
+`define op_i64_clz    8'h79
+`define op_i64_ctz    8'h7a
+`define op_i64_popcnt 8'h7b
+`define op_i64_add    8'h7c
+`define op_i64_sub    8'h7d
+`define op_i64_mul    8'h7e
+`define op_i64_div_s  8'h7f
+`define op_i64_div_u  8'h80
+`define op_i64_rem_s  8'h81
+`define op_i64_rem_u  8'h82
+`define op_i64_and    8'h83
+`define op_i64_or     8'h84
+`define op_i64_xor    8'h85
+`define op_i64_shl    8'h86
+`define op_i64_shr_s  8'h87
+`define op_i64_shr_u  8'h88
+`define op_i64_rotl   8'h89
+`define op_i64_rotr   8'h8a
 
 // Conversions
 `define op_i64_extend_s_i32 8'hac

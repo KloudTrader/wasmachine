@@ -386,11 +386,77 @@ module cpu
       stack_data <= {data_type, value};
   endtask
 
+  task set_stack_data_64;
+    input [ 1:0] data_type;
+    input [63:0] value;
+
+    stack_data <= {data_type, value};
+  endtask
+
   task comparison;
     input value;
 
     set_stack_data_32(`i32, value ? 32'b1 : 32'b0);
   endtask
+
+  function [5:0] clz32;
+    input [31:0] val32;
+
+    reg [15:0] val16;
+    reg [ 7:0] val8;
+    reg [ 3:0] val4;
+
+    if (val32[31:0] == 32'b0)
+       clz32 = 32;
+
+    else begin
+      clz32[5] = 1'b0;
+      clz32[4] = (val32[31:16] == 16'b0);
+      val16 = clz32[4] ? val32[15:0] : val32[31:16];
+      clz32[3] = (val16[15:8] == 8'b0);
+      val8 = clz32[3] ? val16[7:0] : val16[15:8];
+      clz32[2] = (val8[7:4] == 4'b0);
+      val4 = clz32[2] ? val8[3:0] : val8[7:4];
+      clz32[1] = (val4[3:2] == 2'b0);
+      clz32[0] = clz32[1] ? ~val4[1] : ~val4[3];
+    end
+  endfunction
+
+  function [5:0] ctz32;
+    input [31:0] val32;
+
+    reg [15:0] val16;
+    reg [ 7:0] val8;
+    reg [ 3:0] val4;
+
+    if (val32[31:0] == 32'b0)
+       ctz32 = 32;
+
+    else begin
+      ctz32[5] = 1'b0;
+      ctz32[4] = (val32[15:0] == 16'b0);
+      val16 = ctz32[4] ? val32[31:16] : val32[15:0];
+      ctz32[3] = (val16[7:0] == 8'b0);
+      val8 = ctz32[3] ? val16[15:8] : val16[7:0];
+      ctz32[2] = (val8[3:0] == 4'b0);
+      val4 = ctz32[2] ? val8[7:4] : val8[3:0];
+      ctz32[1] = (val4[1:0] == 2'b0);
+      ctz32[0] = ctz32[1] ? ~val4[3] : ~val4[1];
+    end
+  endfunction
+
+  function [31:0] cones32;
+    input [31:0] d;
+
+    cones32 = (((d[ 0] + d[ 1] + d[ 2] + d[ 3])
+            +   (d[ 4] + d[ 5] + d[ 6] + d[ 7]))
+            +  ((d[ 8] + d[ 9] + d[10] + d[11])
+            +   (d[12] + d[13] + d[14] + d[15])))
+            + (((d[16] + d[17] + d[18] + d[19])
+            +   (d[20] + d[21] + d[22] + d[23]))
+            +  ((d[24] + d[25] + d[26] + d[27])
+            +   (d[28] + d[29] + d[30] + d[31])));
+  endfunction
 
 
   //
@@ -687,6 +753,85 @@ module cpu
               end
 
               // Numeric operators
+              `op_i32_clz: begin
+                if(result_type != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  set_stack_data_32(`i32, {26'b0, clz32(stack_out_32)});
+                end
+              end
+
+              `op_i32_ctz: begin
+                if(result_type != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  set_stack_data_32(`i32, {26'b0, ctz32(stack_out_32)});
+                end
+              end
+
+              `op_i32_popcnt: begin
+                if(result_type != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  set_stack_data_32(`i32, cones32(stack_out_32));
+                end
+              end
+
+              `op_i64_clz: begin
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `i64)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+
+                  if (stack_out[63:0] == 64'b0)
+                    set_stack_data_32(`i32, 64);
+
+                  else
+                    set_stack_data_32(`i32, {26'b0, clz32((stack_out[63:32] == 32'b0) ? stack_out[31:0] : stack_out[63:32])});
+                end
+              end
+
+              `op_i64_ctz: begin
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `i64)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+
+                  if (stack_out[63:0] == 64'b0)
+                    set_stack_data_32(`i32, 64);
+
+                  else
+                    set_stack_data_32(`i32, {26'b0, ctz32((stack_out[31:0] == 32'b0) ? stack_out[63:32] : stack_out[31:0])});
+                end
+              end
+
+              `op_i64_popcnt: begin
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `i64)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+
+                  set_stack_data_32(`i32, cones32(stack_out_32[63:32])+cones32(stack_out_32[31:0]));
+                end
+              end
 
               // Conversions
               `op_i64_extend_s_i32: begin
@@ -839,7 +984,20 @@ module cpu
               `op_i32_ge_s,
               `op_i32_ge_u,
               `op_i32_add,
-              `op_i32_sub:
+              `op_i32_sub,
+              `op_i32_mul,
+              `op_i32_div_s,
+              `op_i32_div_u,
+              `op_i32_rem_s,
+              `op_i32_rem_u,
+              `op_i32_and,
+              `op_i32_or,
+              `op_i32_xor,
+              `op_i32_shl,
+              `op_i32_shr_s,
+              `op_i32_shr_u,
+              `op_i32_rotl,
+              `op_i32_rotr:
               begin
                 if(stack_out[DATA_WIDTH+1:DATA_WIDTH] != `i32 || stack_out1[DATA_WIDTH+1:DATA_WIDTH] != `i32)
                   trap <= `TYPE_MISMATCH;
@@ -862,8 +1020,21 @@ module cpu
                     `op_i32_ge_u: comparison(        stack_out1[31:0]  >=         stack_out[31:0] );
 
                     // Numeric operators
-                    `op_i32_add: set_stack_data_32(`i32, stack_out1[31:0] + stack_out[31:0]);
-                    `op_i32_sub: set_stack_data_32(`i32, stack_out1[31:0] - stack_out[31:0]);
+                    `op_i32_add   : set_stack_data_32(`i32,         stack_out1[31:0]  +          stack_out[31:0] );
+                    `op_i32_sub   : set_stack_data_32(`i32,         stack_out1[31:0]  -          stack_out[31:0] );
+                    `op_i32_mul   : set_stack_data_32(`i32,         stack_out1[31:0]  *          stack_out[31:0] );
+                    `op_i32_div_s : set_stack_data_32(`i32, $signed(stack_out1[31:0]) /  $signed(stack_out[31:0]));  // TODO this should be truncated toward zero
+                    `op_i32_div_u : set_stack_data_32(`i32,         stack_out1[31:0]  /          stack_out[31:0] );  // TODO this should floored
+                    `op_i32_rem_s : set_stack_data_32(`i32, $signed(stack_out1[31:0]) %  $signed(stack_out[31:0]));  // TODO this should has the sign of the dividend
+                    `op_i32_rem_u : set_stack_data_32(`i32,         stack_out1[31:0]  %          stack_out[31:0] );
+                    `op_i32_and   : set_stack_data_32(`i32,         stack_out1[31:0]  &          stack_out[31:0] );
+                    `op_i32_or    : set_stack_data_32(`i32,         stack_out1[31:0]  |          stack_out[31:0] );
+                    `op_i32_xor   : set_stack_data_32(`i32,         stack_out1[31:0]  ^          stack_out[31:0] );
+                    `op_i32_shl   : set_stack_data_32(`i32,         stack_out1[31:0]  <<         stack_out[ 4:0] );
+                    `op_i32_shr_s : set_stack_data_32(`i32,         stack_out1[31:0]  >>         stack_out[ 4:0] );
+                    `op_i32_shr_u : set_stack_data_32(`i32,         stack_out1[31:0]  >>         stack_out[ 4:0] );
+                    `op_i32_rotl  : set_stack_data_32(`i32, {stack_out1[31:0],stack_out1[31:0]} << stack_out[4:0]);
+                    `op_i32_rotr  : set_stack_data_32(`i32, {stack_out1[31:0],stack_out1[31:0]} >> stack_out[4:0]);
                   endcase
                 end
               end
@@ -880,7 +1051,20 @@ module cpu
               `op_i64_ge_s,
               `op_i64_ge_u,
               `op_i64_add,
-              `op_i64_sub:
+              `op_i64_sub,
+              `op_i64_mul,
+              `op_i64_div_s,
+              `op_i64_div_u,
+              `op_i64_rem_s,
+              `op_i64_rem_u,
+              `op_i64_and,
+              `op_i64_or,
+              `op_i64_xor,
+              `op_i64_shl,
+              `op_i64_shr_s,
+              `op_i64_shr_u,
+              `op_i64_rotl,
+              `op_i64_rotr:
               begin
                 if(!USE_64B)
                   trap <= `NO_64B;
@@ -906,8 +1090,21 @@ module cpu
                     `op_i64_ge_u: comparison(        stack_out1[63:0]  >=         stack_out[63:0] );
 
                     // Numeric operators
-                    `op_i64_add: stack_data <= {`i64, stack_out1[63:0] + stack_out[63:0]};
-                    `op_i64_sub: stack_data <= {`i64, stack_out1[63:0] - stack_out[63:0]};
+                    `op_i64_add   : set_stack_data_64(`i64,         stack_out1[63:0]  +          stack_out[63:0] );
+                    `op_i64_sub   : set_stack_data_64(`i64,         stack_out1[63:0]  -          stack_out[63:0] );
+                    `op_i64_mul   : set_stack_data_64(`i64,         stack_out1[63:0]  *          stack_out[63:0] );
+                    `op_i64_div_s : set_stack_data_64(`i64, $signed(stack_out1[63:0]) /  $signed(stack_out[63:0]));  // TODO this should be truncated toward zero
+                    `op_i64_div_u : set_stack_data_64(`i64,         stack_out1[63:0]  /          stack_out[63:0] );  // TODO this should floored
+                    `op_i64_rem_s : set_stack_data_64(`i64, $signed(stack_out1[63:0]) %  $signed(stack_out[63:0]));  // TODO this should has the sign of the dividend
+                    `op_i64_rem_u : set_stack_data_64(`i64,         stack_out1[63:0]  %          stack_out[63:0] );
+                    `op_i64_and   : set_stack_data_64(`i64,         stack_out1[63:0]  &          stack_out[63:0] );
+                    `op_i64_or    : set_stack_data_64(`i64,         stack_out1[63:0]  |          stack_out[63:0] );
+                    `op_i64_xor   : set_stack_data_64(`i64,         stack_out1[63:0]  ^          stack_out[63:0] );
+                    `op_i64_shl   : set_stack_data_64(`i64,         stack_out1[63:0]  <<         stack_out[ 5:0] );
+                    `op_i64_shr_s : set_stack_data_64(`i64,         stack_out1[63:0]  >>         stack_out[ 5:0] );
+                    `op_i64_shr_u : set_stack_data_64(`i64,         stack_out1[63:0]  >>         stack_out[ 5:0] );
+                    `op_i64_rotl  : set_stack_data_64(`i64, {stack_out1[63:0],stack_out1[63:0]} << stack_out[5:0]);
+                    `op_i64_rotr  : set_stack_data_64(`i64, {stack_out1[63:0],stack_out1[63:0]} >> stack_out[5:0]);
                   endcase
                 end
               end
