@@ -71,10 +71,10 @@ cycle.
 
 # 2017-03-15
 
-Max length of single inmediate values is 9 bytes (`i64.const`), and for combined
-ones 10 bytes (`memory_immediate`, made of two `varuint32` fields). `br_table`
-has a variable length inmediate with the fields `target_count`, `target_table`
-(variable 0-n) and `default_target`, so just 5 or 10 bytes would be enought.
+Max length of inmediate values is 10 bytes (`i64.const` and `memory_immediate`,
+made of two `varuint32` fields). `br_table` has a variable length inmediate with
+the fields `target_count`, `target_table` (variable 0-n) and `default_target`,
+so just 5 or 10 bytes would be enought.
 
 [Machine Learning in FPGAs](http://cadlab.cs.ucla.edu/~cong/slides/HALO15_keynote.pdf)
 
@@ -318,9 +318,6 @@ WASD acronim is still not related to WebAssembly in any known way, and are the
 keyboard letters used for games in 90's. Cool for the WebAssembly Extended
 format or for a videogames console :-P
 
-FlyWeb – Pure Web Cross-Device Interaction
-https://hacks.mozilla.org/2016/09/flyweb-pure-web-cross-device-interaction/
-
 # 2017-04-21
 
 MemoryController can have queued requests, but changuing from read to write will
@@ -355,3 +352,19 @@ FPGA or the toolchain itself...
 
 ICE40 BRAMs can be directly invoked, but also they should be already sintetized
 automatically...
+
+Reset of adjacent registers in a registers array would be done with several
+parallel resets created using `for`, each one for a group of size power of two,
+and later using ones or others based on the zeroes and ones of the register
+holding the number of registers to be resetted. Base address for each one of the
+blocks would need to be set independently and in cascade. Problem with that,
+that this can't be used for RAM memory, so another solution would need to be
+found... :-/
+
+Develop tool to show source code lines describing the critical path, so it can
+be optimized. It can be an automation of instructions found at
+https://www.reddit.com/r/yosys/comments/4g5mvm/find_path_between_two_regs/d2gcetp/
+
+https://www.reddit.com/r/yosys/comments/61z3e7/liberty_libraries/
+
+https://github.com/cliffordwolf/yosys/issues/335
