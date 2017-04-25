@@ -368,3 +368,14 @@ https://www.reddit.com/r/yosys/comments/4g5mvm/find_path_between_two_regs/d2gcet
 https://www.reddit.com/r/yosys/comments/61z3e7/liberty_libraries/
 
 https://github.com/cliffordwolf/yosys/issues/335
+
+# 2017-04-25
+
+[Signed comparison in Verilog](http://excamera.com/sphinx/fpga-verilog-sign.html)
+
+http://icoboard.org/
+
+Data probably would need to be padded on BRAMs for faster access if it's not
+already done by the compiler itself...
+
+Singed operations need that BOTH operators are signed.
