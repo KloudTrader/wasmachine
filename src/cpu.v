@@ -386,6 +386,12 @@ module cpu
       stack_data <= {data_type, value};
   endtask
 
+  task comparison;
+    input value;
+
+    set_stack_data_32(`i32, value ? 32'b1 : 32'b0);
+  endtask
+
 
   //
   // Main loop
@@ -663,7 +669,7 @@ module cpu
 
                 else begin
                   stack_op <= `REPLACE;
-                  set_stack_data_32(`i32, stack_out_32 ? 32'b0 : 32'b1);
+                  comparison(stack_out_32 == 32'b0);
                 end
               end
 
@@ -676,7 +682,7 @@ module cpu
 
                 else begin
                   stack_op <= `REPLACE;
-                  stack_data <= {`i64, 32'b0, stack_out_64 ? 32'b0 : 32'b1};
+                  comparison(stack_out_64 == 64'b0);
                 end
               end
 
@@ -798,6 +804,14 @@ module cpu
               // Binary operations - 32 bits
               `op_i32_eq,
               `op_i32_ne,
+              `op_i32_lt_s,
+              `op_i32_lt_u,
+              `op_i32_gt_s,
+              `op_i32_gt_u,
+              `op_i32_le_s,
+              `op_i32_le_u,
+              `op_i32_ge_s,
+              `op_i32_ge_u,
               `op_i32_add,
               `op_i32_sub:
               begin
@@ -810,8 +824,16 @@ module cpu
 
                   case(opcode)
                     // Comparison operators
-                    `op_i32_eq: set_stack_data_32(`i32, (stack_out1[31:0] == stack_out[31:0]) ? 32'b1 : 32'b0);
-                    `op_i32_ne: set_stack_data_32(`i32, (stack_out1[31:0] != stack_out[31:0]) ? 32'b1 : 32'b0);
+                    `op_i32_eq  : comparison(        stack_out1[31:0]  ==         stack_out[31:0] );
+                    `op_i32_ne  : comparison(        stack_out1[31:0]  !=         stack_out[31:0] );
+                    `op_i32_lt_s: comparison($signed(stack_out1[31:0]) <  $signed(stack_out[31:0]));
+                    `op_i32_lt_u: comparison(        stack_out1[31:0]  <          stack_out[31:0] );
+                    `op_i32_gt_s: comparison($signed(stack_out1[31:0]) >  $signed(stack_out[31:0]));
+                    `op_i32_gt_u: comparison(        stack_out1[31:0]  >          stack_out[31:0] );
+                    `op_i32_le_s: comparison($signed(stack_out1[31:0]) <= $signed(stack_out[31:0]));
+                    `op_i32_le_u: comparison(        stack_out1[31:0]  <=         stack_out[31:0] );
+                    `op_i32_ge_s: comparison($signed(stack_out1[31:0]) >= $signed(stack_out[31:0]));
+                    `op_i32_ge_u: comparison(        stack_out1[31:0]  >=         stack_out[31:0] );
 
                     // Numeric operators
                     `op_i32_add: set_stack_data_32(`i32, stack_out1[31:0] + stack_out[31:0]);
@@ -823,6 +845,14 @@ module cpu
               // Binary operations - 64 bits
               `op_i64_eq,
               `op_i64_ne,
+              `op_i64_lt_s,
+              `op_i64_lt_u,
+              `op_i64_gt_s,
+              `op_i64_gt_u,
+              `op_i64_le_s,
+              `op_i64_le_u,
+              `op_i64_ge_s,
+              `op_i64_ge_u,
               `op_i64_add,
               `op_i64_sub:
               begin
@@ -838,8 +868,16 @@ module cpu
 
                   case(opcode)
                     // Comparison operators
-                    `op_i64_eq: stack_data <= {`i64, (stack_out1[63:0] == stack_out[63:0]) ? 64'b1 : 64'b0};
-                    `op_i64_ne: stack_data <= {`i64, (stack_out1[63:0] != stack_out[63:0]) ? 64'b1 : 64'b0};
+                    `op_i64_eq  : comparison(        stack_out1[63:0]  ==         stack_out[63:0] );
+                    `op_i64_ne  : comparison(        stack_out1[63:0]  !=         stack_out[63:0] );
+                    `op_i64_lt_s: comparison($signed(stack_out1[63:0]) <  $signed(stack_out[63:0]));
+                    `op_i64_lt_u: comparison(        stack_out1[63:0]  <          stack_out[63:0] );
+                    `op_i64_gt_s: comparison($signed(stack_out1[63:0]) >  $signed(stack_out[63:0]));
+                    `op_i64_gt_u: comparison(        stack_out1[63:0]  >          stack_out[63:0] );
+                    `op_i64_le_s: comparison($signed(stack_out1[63:0]) <= $signed(stack_out[63:0]));
+                    `op_i64_le_u: comparison(        stack_out1[63:0]  <=         stack_out[63:0] );
+                    `op_i64_ge_s: comparison($signed(stack_out1[63:0]) >= $signed(stack_out[63:0]));
+                    `op_i64_ge_u: comparison(        stack_out1[63:0]  >=         stack_out[63:0] );
 
                     // Numeric operators
                     `op_i64_add: stack_data <= {`i64, stack_out1[63:0] + stack_out[63:0]};

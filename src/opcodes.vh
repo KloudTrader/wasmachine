@@ -35,9 +35,25 @@
 `define op_i32_eqz  8'h45
 `define op_i32_eq   8'h46
 `define op_i32_ne   8'h47
+`define op_i32_lt_s 8'h48
+`define op_i32_lt_u 8'h49
+`define op_i32_gt_s 8'h4a
+`define op_i32_gt_u 8'h4b
+`define op_i32_le_s 8'h4c
+`define op_i32_le_u 8'h4d
+`define op_i32_ge_s 8'h4e
+`define op_i32_ge_u 8'h4f
 `define op_i64_eqz  8'h50
 `define op_i64_eq   8'h51
 `define op_i64_ne   8'h52
+`define op_i64_lt_s 8'h53
+`define op_i64_lt_u 8'h54
+`define op_i64_gt_s 8'h55
+`define op_i64_gt_u 8'h56
+`define op_i64_le_s 8'h57
+`define op_i64_le_u 8'h58
+`define op_i64_ge_s 8'h59
+`define op_i64_ge_u 8'h5a
 
 // Numeric operators
 `define op_i32_add  8'h6a
