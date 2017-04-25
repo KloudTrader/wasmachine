@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/piranna/wasmachine.svg?branch=master)](https://travis-ci.org/piranna/wasmachine)
 
 # wasmachine
+
 Put WebAssembly in your washing machine
 
 `wasmachine` is an implementation of the [WebAssembly](http://webassembly.org) specification in a FPGA.
@@ -8,7 +9,24 @@ It follows a sequential 6-steps design.
 
 Currently it's in an initial state but is able to exec some basic commands.
 
+## Features
+
+- Stack-based (calls, blocks and operands), variable-length CISC architecture
+  following the WebAssembly spec design
+- Implemented an "expanded" version of the binary format
+  - Inlined destination of blocks and branches labels
+  - Decoded LEB128 targets for `br_table`
+- Strict type-checking on runtime
+- Optionally disable floating point, memory and 64 bits operations at instance
+  time to generate a simpler core for smaller FPGAs
+
+## Keynotes
+
+- [NodeJS Madrid](https://www.todojs.com/web-assembly-workshop-by-dan-callahan)
+  (ad-hoc spontaneous keynote at end of the main one :-P)
+
 ## Roadmap
+
 1. Implement integer mathematical operations
 2. Support for functions calling
 3. Add a 64 bits FPU for the floating point operations

@@ -9,32 +9,43 @@
 module cpu
 #(
   parameter MEM_DEPTH   = 3,
-  parameter STACK_DEPTH = 7
+  parameter STACK_DEPTH = 7,
+
+  parameter HAS_FPU = 1,
+  parameter HAS_RAM = 1,
+  parameter USE_64B = 1
 )
 (
   input clk,
   input reset,
 
+  // Status
   input  wire [  MEM_DEPTH:0] pc,
   input  wire [STACK_DEPTH:0] index,
-  output wire [         63:0] result,
-  output wire [          1:0] result_type,
-  output wire                 result_empty,
   output reg  [          3:0] trap = `NONE,
 
+  // Memory
   output reg [     MEM_DEPTH  :0] mem_addr,
   output reg [     MEM_EXTRA-1:0] mem_extra,
   input      [8*2**MEM_EXTRA-1:0] mem_data,
   input                           mem_error,
 
-  input wire        pushStack,
-  input wire [65:0] stack_in
+  // Stack status
+  input  wire                      pushStack,
+  input  wire [2+DATA_WIDTH_MSB:0] stack_in,
+  output wire [  DATA_WIDTH_MSB:0] result,
+  output wire [               1:0] result_type,
+  output wire                      result_empty
 );
+
+  localparam DATA_WIDTH     = USE_64B ? 64 : 32;
+  localparam DATA_WIDTH_MSB = DATA_WIDTH-1;
 
   localparam MEM_EXTRA = $clog2(11);
 
   // Stack
-  localparam STACK_WIDTH = 66;
+  // TODO Remove useless bits when not using FPU or 64 bits data
+  localparam STACK_WIDTH = 2+DATA_WIDTH;
 
   reg  [            2:0] stack_op;
   reg  [STACK_WIDTH-1:0] stack_data;
@@ -145,32 +156,37 @@ module cpu
   );
 
   // LEB128 - decoder of `varintN` values
-  wire[63:0] leb128_out;
-  wire[ 3:0] leb128_len;
+  wire[DATA_WIDTH_MSB:0] leb128_out;
+  wire[             3:0] leb128_len;  // TODO number of bits
 
-  unpack_i64 leb128(mem_data[79:72], mem_data[71:64], mem_data[63:56],
-                    mem_data[55:48], mem_data[47:40], mem_data[39:32],
-                    mem_data[31:24], mem_data[23:16], mem_data[15: 8],
-                    mem_data[ 7: 0], leb128_out, leb128_len);
+  if(USE_64B)
+    unpack_i64 leb128(mem_data[79:72], mem_data[71:64], mem_data[63:56],
+                      mem_data[55:48], mem_data[47:40], mem_data[39:32],
+                      mem_data[31:24], mem_data[23:16], mem_data[15: 8],
+                      mem_data[ 7: 0], leb128_out, leb128_len);
+  else
+    unpack_i32 leb128(mem_data[79:72], mem_data[71:64], mem_data[63:56],
+                      mem_data[55:48], mem_data[47:40], leb128_out, leb128_len);
 
   // Double to Float
-
   wire        double_to_float_a_ack;
   reg         double_to_float_a_stb;
   wire [31:0] double_to_float_z;
   wire        double_to_float_z_stb;
   reg         double_to_float_z_ack;
 
-  double_to_float d2f(
-    .clk(clk),
-    .rst(reset),
-    .input_a_ack(double_to_float_a_ack),
-    .input_a(stack_out_64),
-    .input_a_stb(double_to_float_a_stb),
-    .output_z(double_to_float_z),
-    .output_z_stb(double_to_float_z_stb),
-    .output_z_ack(double_to_float_z_ack)
-  );
+  if(HAS_FPU && USE_64B)
+    double_to_float d2f(
+      .clk(clk),
+      .rst(reset),
+      .input_a_ack(double_to_float_a_ack),
+      .input_a(stack_out_64),
+      .input_a_stb(double_to_float_a_stb),
+      .output_z(double_to_float_z),
+      .output_z_stb(double_to_float_z_stb),
+      .output_z_ack(double_to_float_z_ack)
+    );
+
 
   //
   // Continuous assignments & wire aliases
@@ -192,7 +208,7 @@ module cpu
   wire[MEM_DEPTH:0] mem_data_localEntries    = mem_data[ 31: 0];
 
   // Stack
-  wire[ 1:0] stack_out_type = stack_out[65:64];
+  wire[ 1:0] stack_out_type = stack_out[DATA_WIDTH+1:DATA_WIDTH];
   wire[63:0] stack_out_64   = stack_out[63:0];
   wire[31:0] stack_out_32   = stack_out[31:0];
 
@@ -216,6 +232,7 @@ module cpu
   //
   // CPU internal status
   //
+
   localparam FETCH  = 3'b000;
   localparam FETCH2 = 3'b001;
   localparam EXEC   = 3'b010;
@@ -230,6 +247,11 @@ module cpu
 
   reg [MEM_DEPTH:0] brTable_offset, brTable_offset2;
   reg [MEM_DEPTH:0] call_PC;
+
+
+  //
+  // Tasks
+  //
 
   task call_return;
     // Main call (`start`, `export`), return results and halt
@@ -281,7 +303,7 @@ module cpu
     if(stackSlice[RETURN_H:RETURN_L] == 7'h40)
       stack_op <= `INDEX_RESET;
 
-    else if(7'h7f - stackSlice[RETURN_H:RETURN_L] == data[65:64]) begin
+    else if(7'h7f - stackSlice[RETURN_H:RETURN_L] == data[DATA_WIDTH+1:DATA_WIDTH]) begin
       stack_op   <= `INDEX_RESET_AND_PUSH;
       stack_data <= data;
     end
@@ -354,7 +376,21 @@ module cpu
     stack_underflow <= stack_index;
   endtask
 
+  task set_stack_data_32;
+    input [ 1:0] data_type;
+    input [31:0] value;
+
+    if(USE_64B)
+      stack_data <= {data_type, 32'b0, value};
+    else
+      stack_data <= {data_type, value};
+  endtask
+
+
+  //
   // Main loop
+  //
+
   always @(posedge clk) begin
     stack_op      <= `NONE;
     blockStack_op <= `NONE;
@@ -548,7 +584,7 @@ module cpu
 
               `op_select: begin
                 // Validate both operators are of the same type
-                if(stack_out1[65:64] != stack_out2[65:64])
+                if(stack_out1[DATA_WIDTH+1:DATA_WIDTH] != stack_out2[DATA_WIDTH+1:DATA_WIDTH])
                   trap <= `TYPES_MISMATCH;
 
                 else begin
@@ -584,30 +620,40 @@ module cpu
               // Constants
               `op_i32_const: begin
                 stack_op <= `PUSH;
-                stack_data <= {`i32, 32'b0, leb128_out[31:0]};
+                set_stack_data_32(`i32, leb128_out[31:0]);
 
                 PC <= PC+leb128_len;
               end
 
               `op_i64_const: begin
-                stack_op <= `PUSH;
-                stack_data <= {`i64, leb128_out};
+                if(!USE_64B)
+                  trap <= `NO_64B;
 
-                PC <= PC+leb128_len;
+                else begin
+                  stack_op <= `PUSH;
+                  stack_data <= {`i64, leb128_out};
+
+                  PC <= PC+leb128_len;
+                end
               end
 
               `op_f32_const: begin
                 stack_op <= `PUSH;
-                stack_data <= {`f32, 32'b0, mem_data[79:48]};
+                set_stack_data_32(`f32, mem_data[79:48]);
 
                 PC <= PC+4;
               end
 
               `op_f64_const: begin
-                stack_op <= `PUSH;
-                stack_data <= {`f64, mem_data[79:16]};
+                if(!USE_64B)
+                  trap <= `NO_64B;
 
-                PC <= PC+8;
+                else begin
+                  stack_op <= `PUSH;
+                  stack_data <= {`f64, mem_data[79:16]};
+
+                  PC <= PC+8;
+                end
               end
 
               // Comparison operators
@@ -617,17 +663,20 @@ module cpu
 
                 else begin
                   stack_op <= `REPLACE;
-                  stack_data <= {`i32, 32'b0, stack_out_32 ? 32'b0 : 32'b1};
+                  set_stack_data_32(`i32, stack_out_32 ? 32'b0 : 32'b1);
                 end
               end
 
               `op_i64_eqz: begin
-                if(result_type != `i64)
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `i64)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
                   stack_op <= `REPLACE;
-                  stack_data <= {`i64, stack_out_64 ? 64'b0 : 64'b1};
+                  stack_data <= {`i64, 32'b0, stack_out_64 ? 32'b0 : 32'b1};
                 end
               end
 
@@ -635,25 +684,59 @@ module cpu
 
               // Conversions
               `op_f32_demote_f64: begin
-                double_to_float_a_stb <= 0;
-                double_to_float_z_ack <= 0;
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
 
-                if(result_type != `f64)
-                  trap <= `TYPE_MISMATCH;
-
-                else if(double_to_float_z_stb) begin
-                  stack_op   <= `REPLACE;
-                  stack_data <= {`f32, 32'b0, double_to_float_z};
-
-                  double_to_float_z_ack <= 1;
-                end
+                else if(!USE_64B)
+                  trap <= `NO_64B;
 
                 else begin
-                  if(double_to_float_a_ack)
-                    double_to_float_a_stb <= 1;
+                  double_to_float_a_stb <= 0;
+                  double_to_float_z_ack <= 0;
 
-                  // Wait at the same step until the FPU is ready
-                  step <= EXEC;
+                  if(result_type != `f64)
+                    trap <= `TYPE_MISMATCH;
+
+                  else if(double_to_float_z_stb) begin
+                    stack_op   <= `REPLACE;
+                    stack_data <= {`f32, 32'b0, double_to_float_z};
+
+                    double_to_float_z_ack <= 1;
+                  end
+
+                  else begin
+                    if(double_to_float_a_ack)
+                      double_to_float_a_stb <= 1;
+
+                    // Wait at the same step until the FPU is ready
+                    step <= EXEC;
+                  end
+                end
+              end
+
+              `op_f64_promote_f32: begin
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else begin
+                  // if(result_type != `f32)
+                  //   trap <= `TYPE_MISMATCH;
+                  //
+                  // else if(input_a_ack) begin
+                  //
+                  // end
+                  //
+                  // else if(output_z_stb) begin
+                  //
+                  //   float_to_double_ack <= 1;
+                  // end
+                  //
+                  // // Wait at the same step until the FPU is ready
+                  // else
+                  //   step <= EXEC;
                 end
               end
 
@@ -664,14 +747,17 @@ module cpu
 
                 else begin
                   stack_op <= `REPLACE;
-                  stack_data <= {`i32, 32'b0, stack_out_32};
+                  set_stack_data_32(`i32, stack_out_32);
 
                   step <= FETCH;
                 end
               end
 
               `op_i64_reinterpret_f64: begin
-                if(result_type != `f64)
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `f64)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -688,14 +774,17 @@ module cpu
 
                 else begin
                   stack_op <= `REPLACE;
-                  stack_data <= {`f32, 32'b0, stack_out_32};
+                  set_stack_data_32(`f32, stack_out_32);
 
                   step <= FETCH;
                 end
               end
 
               `op_f64_reinterpret_i64: begin
-                if(result_type != `i64)
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `i64)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -712,7 +801,7 @@ module cpu
               `op_i32_add,
               `op_i32_sub:
               begin
-                if(stack_out[65:64] != `i32 || stack_out1[65:64] != `i32)
+                if(stack_out[DATA_WIDTH+1:DATA_WIDTH] != `i32 || stack_out1[DATA_WIDTH+1:DATA_WIDTH] != `i32)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -721,12 +810,12 @@ module cpu
 
                   case(opcode)
                     // Comparison operators
-                    `op_i32_eq: stack_data <= {`i32, (stack_out[31:0] == stack_out1[31:0]) ? 64'b1 : 64'b0};
-                    `op_i32_ne: stack_data <= {`i32, (stack_out[31:0] != stack_out1[31:0]) ? 64'b1 : 64'b0};
+                    `op_i32_eq: set_stack_data_32(`i32, (stack_out1[31:0] == stack_out[31:0]) ? 32'b1 : 32'b0);
+                    `op_i32_ne: set_stack_data_32(`i32, (stack_out1[31:0] != stack_out[31:0]) ? 32'b1 : 32'b0);
 
                     // Numeric operators
-                    `op_i32_add: stack_data <= {`i32, stack_out[31:0] + stack_out1[31:0]};
-                    `op_i32_sub: stack_data <= {`i32, stack_out1[31:0] - stack_out[31:0]};
+                    `op_i32_add: set_stack_data_32(`i32, stack_out1[31:0] + stack_out[31:0]);
+                    `op_i32_sub: set_stack_data_32(`i32, stack_out1[31:0] - stack_out[31:0]);
                   endcase
                 end
               end
@@ -737,7 +826,10 @@ module cpu
               `op_i64_add,
               `op_i64_sub:
               begin
-                if(stack_out[65:64] != `i64 || stack_out1[65:64] != `i64)
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(stack_out[DATA_WIDTH+1:DATA_WIDTH] != `i64 || stack_out1[DATA_WIDTH+1:DATA_WIDTH] != `i64)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -746,11 +838,11 @@ module cpu
 
                   case(opcode)
                     // Comparison operators
-                    `op_i64_eq: stack_data <= {`i64, (stack_out[63:0] == stack_out1[63:0]) ? 64'b1 : 64'b0};
-                    `op_i64_ne: stack_data <= {`i64, (stack_out[63:0] != stack_out1[63:0]) ? 64'b1 : 64'b0};
+                    `op_i64_eq: stack_data <= {`i64, (stack_out1[63:0] == stack_out[63:0]) ? 64'b1 : 64'b0};
+                    `op_i64_ne: stack_data <= {`i64, (stack_out1[63:0] != stack_out[63:0]) ? 64'b1 : 64'b0};
 
                     // Numeric operators
-                    `op_i64_add: stack_data <= {`i64, stack_out[63:0] + stack_out1[63:0]};
+                    `op_i64_add: stack_data <= {`i64, stack_out1[63:0] + stack_out[63:0]};
                     `op_i64_sub: stack_data <= {`i64, stack_out1[63:0] - stack_out[63:0]};
                   endcase
                 end

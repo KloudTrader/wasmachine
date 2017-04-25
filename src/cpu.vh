@@ -1,4 +1,5 @@
 // Types
+// TODO Remove useless bits when not using FPU or 64 bits data
 `define i32 2'b00
 `define i64 2'b01
 `define f32 2'b10
@@ -19,7 +20,8 @@
 `define TYPE_MISMATCH     11
 `define UNKOWN_OPCODE     12
 `define TYPES_MISMATCH    13
-//`define BAD_LABEL         14
+`define NO_FPU            14
+`define NO_64B            15
 
 // blocks
 `define block      2'h0
