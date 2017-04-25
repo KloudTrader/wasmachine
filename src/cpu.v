@@ -689,6 +689,32 @@ module cpu
               // Numeric operators
 
               // Conversions
+              `op_i64_extend_s_i32: begin
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  stack_data <= {`i64, {32{stack_out_32[31]}}, stack_out_32};
+                end
+              end
+
+              `op_i64_extend_u_i32: begin
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `i32)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  stack_data <= {`i64, 32'b0, stack_out_32};
+                end
+              end
+
               `op_f32_demote_f64: begin
                 if(!HAS_FPU)
                   trap <= `NO_FPU;
