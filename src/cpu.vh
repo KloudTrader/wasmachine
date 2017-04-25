@@ -12,15 +12,15 @@
 `define STACK_ERROR       3
 `define BLOCK_STACK_EMPTY 4
 `define BLOCK_STACK_ERROR 5
-`define CALL_STACK_EMPTY  6
-`define CALL_STACK_ERROR  7
-`define MEM_ERROR         8
-`define UNREACHABLE       9
-`define BAD_BLOCK_TYPE    10
-`define TYPE_MISMATCH     11
-`define UNKOWN_OPCODE     12
-`define TYPES_MISMATCH    13
-`define NO_FPU            14
+`define CALL_STACK_ERROR  6
+`define MEM_ERROR         7
+`define UNREACHABLE       8
+`define BAD_BLOCK_TYPE    9
+`define TYPE_MISMATCH     10
+`define UNKOWN_OPCODE     11
+`define TYPES_MISMATCH    12
+`define NO_FPU            13
+`define NO_RAM            14
 `define NO_64B            15
 
 // blocks
