@@ -39,7 +39,6 @@ module SuperStack
   localparam MAX_STACK = (1 << DEPTH+1) - 1;
 
   reg [WIDTH-1:0] stack [0:MAX_STACK-1];
-  reg [DEPTH  :0] i;
 
   task setOutput;
     out  <= stack[index-1];
@@ -58,9 +57,22 @@ module SuperStack
   endtask
 
   task zeroedIndex;
+    reg [$clog2(DEPTH+1):0] i;
+    reg [       DEPTH   :0] j;
+    reg [       DEPTH   :0] o = 0;
+    reg [       DEPTH   :0] slice;
+
     // New index is greater than current one, fill with zeroes
-    for(i=index; i < offset; i = i + 1)
-      stack[i] = 0;
+    if(index < offset) begin
+      slice = offset - index;
+
+      for(i=0; i < DEPTH+1; i = i + 1)
+        if(slice[i])
+          for(j=0; j < 2**i; j = j + 1) begin
+            stack[index+o] = 0;
+            o = o + 1;
+          end
+    end
   endtask
 
   always @(posedge clk) begin

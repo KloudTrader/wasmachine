@@ -260,11 +260,23 @@ module SuperStack_tb();
     #2
     `assert(status, `NONE);
     `assert(out   , 8'h0c);
+    `assert(index , 2);
 
     offset <= 1;
     op <= `UNDERFLOW_GET;
     #2
     `assert(status, `BAD_OFFSET);
+    `assert(index , 2);
+
+    // Reset index over current one and fill with zeroes
+    op <= `INDEX_RESET;
+    offset <= 3;
+    #2
+    `assert(status, `FULL);
+    `assert(out   , 8'h00);
+    `assert(out1  , 8'h0d);
+    `assert(out2  , 8'h0c);
+    `assert(index , 3);
 
     $finish;
   end
