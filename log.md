@@ -379,3 +379,50 @@ Data probably would need to be padded on BRAMs for faster access if it's not
 already done by the compiler itself...
 
 Singed operations need that BOTH operators are signed.
+
+# 2017-04-26
+
+If we consider that both call and block stacks could have the same depth, then
+they could be joined in a single stack similar to how databases tables are
+"normalized", earning some BRAM memory by not duplicating the fields needed to
+manage the operators stack.
+
+Pipelined designs are implemented using several `always` statements in parallel,
+one for each of the stages, and using registers to pass the values to the next
+ones and control if workflow should be stopped.
+
+Of all the possible optimizations, probably the best one is to define and use
+our own opcodes format, using fixed prefixes for similar operations. This would
+allow to don't need to decode the full opcode previously to process them but
+instead simply check the type of the operation and delegate it to its specific
+component, that being simpler would also make it easier to test and optimice.
+Drawback would be that opcodes would not be so much packed and need to use
+several bytes for their identifier.
+
+Another possible optimization would be to fully decode the LEB128 fields, this
+would waste more RAM memory (except on the cases of big numbers, where it would
+be reduced) but would earn some logic levels and make some paths shorter.
+
+http://www.chunder.com/ozinferno/
+https://en.wikipedia.org/wiki/Stack_machine#Able_to_use_Out-of-Order_Execution
+[Treegraph-based Instruction Scheduling for Stack-based Virtual Machines](http://www.sciencedirect.com/science/article/pii/S1571066111001538)
+
+# 2017-04-27
+
+CPU could be pipelined by adding guards to access to the elements that would
+need several cycles, like the stack or memory or FPU, so pipeline gets stalled
+until they get available. For elements with a constant delay, this could be
+implemented with a counter decreased each cycle like POSIX semaphores, and for
+non constant ones then it would be a flag. Obviously, if we manage to make
+memory and/or stack to work in a single cycle, the guard would not be needed.
+The FPU would need to stall the full CPU until it gets finished since it needs
+to write to the stack, but maybe it would be possible to use the same stack
+guard. All the operations would be pipelined (also return from blocks and
+functions) except the ones that change the Program Counter, that would need to
+cancel the next operations and the memory buffer.
+
+Outputs of ROM and stacks could be in some cases combinational, leading to fetch
+then in the next cycle after writting (don't need for an extra one to fetch the
+data) and also to shorter paths.
+
+Async asignations are being done when going out of the `always` block.
