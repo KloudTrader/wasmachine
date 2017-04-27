@@ -30,8 +30,8 @@ module SuperStack
   input                  dropTos,
   output reg [DEPTH  :0] index = 0,       // Current top of stack position
   output reg [WIDTH-1:0] out,             // top of stack, or output of getter
-  output reg [WIDTH-1:0] out1,
-  output reg [WIDTH-1:0] out2,
+  output     [WIDTH-1:0] out1,
+  output     [WIDTH-1:0] out2,
   output reg [      2:0] status = `EMPTY  // none / empty / full / underflow /
                                           // overflow / unknown_op
 );
@@ -40,10 +40,11 @@ module SuperStack
 
   reg [WIDTH-1:0] stack [0:MAX_STACK-1];
 
+  assign out1 = stack[index-2];
+  assign out2 = stack[index-3];
+
   task setOutput;
-    out  <= stack[index-1];
-    out1 <= stack[index-2];
-    out2 <= stack[index-3];
+    out <= stack[index-1];
 
     // Adjust status when underflow limit has been changed
     if(index == MAX_STACK)

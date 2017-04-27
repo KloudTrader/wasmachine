@@ -21,7 +21,7 @@ module stack
   input                  reset,
   input wire [      1:0] op,              // none / push / pop / replace
   input      [WIDTH-1:0] data,            // Data to be inserted on the stack
-  output reg [WIDTH-1:0] tos,             // What's currently on the Top of Stack
+  output     [WIDTH-1:0] tos,             // What's currently on the Top of Stack
   output reg [      1:0] status = `EMPTY  // none / empty / underflow / overflow
 );
 
@@ -29,6 +29,8 @@ module stack
 
   reg [WIDTH-1:0] stack [0:MAX_STACK-1];
   reg [  DEPTH:0] index = 0;
+
+  assign tos = stack[index-1];
 
   always @(posedge clk) begin
     if (reset) begin
@@ -47,7 +49,6 @@ module stack
 
             index <= index + 1;
 
-            tos <= data;
             status <= `NONE;
           end
         end
@@ -59,7 +60,6 @@ module stack
           else begin
             index = index - (1+data);
 
-            tos <= stack[index-1];
             status <= index ? `NONE : `EMPTY;
           end
         end
@@ -71,7 +71,6 @@ module stack
           else begin
             stack[index-1] <= data;
 
-            tos <= data;
             status <= `NONE;
           end
         end

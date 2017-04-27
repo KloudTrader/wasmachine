@@ -123,7 +123,6 @@ module Stack_tb();
     #2
     reset <= 0;
     `assert(status, `EMPTY);
-    `assert(tos   , 8'h06);
 
     $finish;
   end
