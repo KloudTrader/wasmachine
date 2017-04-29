@@ -14,15 +14,18 @@
 module stack
 #(
   parameter WIDTH = 8,  // bits
-  parameter DEPTH = 7   // frames (exponential)
+  parameter DEPTH = 3   // frames (exponential)
 )
 (
-  input                  clk,
-  input                  reset,
-  input wire [      1:0] op,              // none / push / pop / replace
-  input      [WIDTH-1:0] data,            // Data to be inserted on the stack
-  output     [WIDTH-1:0] tos,             // What's currently on the Top of Stack
-  output reg [      1:0] status = `EMPTY  // none / empty / underflow / overflow
+  input clk,
+  input reset,
+
+  input  [      1:0] op,    // none / push / pop / replace
+  input  [WIDTH-1:0] data,  // Data to be inserted on the stack
+  output [WIDTH-1:0] tos,   // What's currently on the Top of Stack
+
+  output reg [1:0] status = `EMPTY,  // none / empty / full / underflow
+  output reg [1:0] error  = `NONE    // none / underflow / overflow
 );
 
   localparam MAX_STACK = (1 << DEPTH+1) - 1;
@@ -32,47 +35,54 @@ module stack
 
   assign tos = stack[index-1];
 
-  always @(posedge clk) begin
-    if (reset) begin
-      index  <= 0;
+  // Adjust status when index has changed
+  always @(index) begin
+    if(index == MAX_STACK)
+      status <= `FULL;
+    else if(index == 0)
       status <= `EMPTY;
-    end
+    else
+      status <= `NONE;
+  end
+
+  always @(posedge clk) begin
+    error <= `NONE;
+
+    if (reset)
+      index <= 0;
 
     else
       case(op)
         `PUSH:
         begin
+          // Stack is full
           if (index == MAX_STACK)
-            status <= `OVERFLOW;
+            error <= `OVERFLOW;
+
+          // Push data to ToS
           else begin
             stack[index] <= data;
 
             index <= index + 1;
-
-            status <= `NONE;
           end
         end
 
         `POP:
         begin
           if (index-data <= 0)
-            status <= `UNDERFLOW;
-          else begin
-            index = index - (1+data);
+            error <= `UNDERFLOW;
 
-            status <= index ? `NONE : `EMPTY;
-          end
+          else
+            index <= index - (1+data);
         end
 
         `REPLACE:
         begin
           if (index == 0)
-            status <= `UNDERFLOW;
-          else begin
-            stack[index-1] <= data;
+            error <= `UNDERFLOW;
 
-            status <= `NONE;
-          end
+          else
+            stack[index-1] <= data;
         end
       endcase
   end

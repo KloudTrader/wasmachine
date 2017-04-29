@@ -16,6 +16,7 @@ module Stack_tb();
   reg  [WIDTH-1:0] data;
   wire [WIDTH-1:0] tos;
   wire [1:0]       status;
+  wire [1:0]       error;
 
   stack #(
     .WIDTH(WIDTH),
@@ -27,7 +28,8 @@ module Stack_tb();
     .op(op),
     .data(data),
     .tos(tos),
-    .status(status)
+    .status(status),
+    .error(error)
   );
 
   always #1 clk = ~clk;
@@ -43,7 +45,7 @@ module Stack_tb();
     op   <= `POP;
     data <= 0;
     #2
-    `assert(status, `UNDERFLOW);
+    `assert(error, `UNDERFLOW);
 
     // Push
     op   <= `PUSH;
@@ -61,21 +63,21 @@ module Stack_tb();
     op   <= `PUSH;
     data <= 2;
     #2
-    `assert(status, `NONE);
+    `assert(status, `FULL);
     `assert(tos   , 8'h02);
 
     // Top of Stack
     op <= `NONE;
     #2
-    `assert(status, `NONE);
+    `assert(status, `FULL);
     `assert(tos   , 8'h02);
 
     // Overflow
     op   <= `PUSH;
     data <= 3;
     #2
-    `assert(status, `OVERFLOW);
-    `assert(tos   , 8'h02);
+    `assert(error, `OVERFLOW);
+    `assert(tos  , 8'h02);
 
     // Pop
     op   <= `POP;
@@ -99,7 +101,7 @@ module Stack_tb();
     op   <= `REPLACE;
     data <= 4;
     #2
-    `assert(status, `UNDERFLOW);
+    `assert(error, `UNDERFLOW);
 
     op   <= `PUSH;
     data <= 5;

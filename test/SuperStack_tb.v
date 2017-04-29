@@ -21,11 +21,14 @@ module SuperStack_tb();
   wire [WIDTH-1:0] out;
   wire [WIDTH-1:0] out1;
   wire [WIDTH-1:0] out2;
-  wire [      2:0] status;
+  wire [WIDTH-1:0] getter;
+  wire [      1:0] status;
+  wire [      1:0] error;
 
   SuperStack #(
     .WIDTH(WIDTH),
-    .DEPTH(DEPTH)
+    .DEPTH(DEPTH),
+    .ZEROED_SLICES(1)
   )
   dut(
     .clk(clk),
@@ -41,7 +44,9 @@ module SuperStack_tb();
     .out(out),
     .out1(out1),
     .out2(out2),
-    .status(status)
+    .getter(getter),
+    .status(status),
+    .error(error)
   );
 
   always #1 clk = ~clk;
@@ -57,7 +62,7 @@ module SuperStack_tb();
     op   <= `POP;
     data <= 0;
     #2
-    `assert(status, `UNDERFLOW);
+    `assert(error, `UNDERFLOW);
 
     // Push
     op   <= `PUSH;
@@ -93,10 +98,10 @@ module SuperStack_tb();
     op   <= `PUSH;
     data <= 3;
     #2
-    `assert(status, `OVERFLOW);
-    `assert(out   , 8'h02);
-    `assert(out1  , 8'h01);
-    `assert(out2  , 8'h00);
+    `assert(error, `OVERFLOW);
+    `assert(out  , 8'h02);
+    `assert(out1 , 8'h01);
+    `assert(out2 , 8'h00);
 
     // Pop
     op   <= `POP;
@@ -121,7 +126,7 @@ module SuperStack_tb();
     op   <= `REPLACE;
     data <= 4;
     #2
-    `assert(status, `UNDERFLOW);
+    `assert(error, `UNDERFLOW);
 
     op   <= `PUSH;
     data <= 5;
@@ -145,7 +150,6 @@ module SuperStack_tb();
     #2
     reset <= 0;
     `assert(status, `EMPTY);
-    `assert(out   , 8'h06);
     `assert(index , 0);
 
     //
@@ -190,9 +194,9 @@ module SuperStack_tb();
     data <= 0;
     #2
     op <= `NONE;
-    `assert(status, `UNDERFLOW);
-    `assert(out   , 8'h08);
-    `assert(index , 1);
+    `assert(error, `UNDERFLOW);
+    `assert(out  , 8'h08);
+    `assert(index, 1);
 
     // Reset underflow limit, and now we can access the data
     underflow_limit <= 0;
@@ -232,9 +236,9 @@ module SuperStack_tb();
     underflow_limit <= 1;
     offset          <= 0;
     #2
-    `assert(status, `BAD_OFFSET);
-    `assert(out   , 8'h0b);
-    `assert(index , 1);
+    `assert(error, `BAD_OFFSET);
+    `assert(out  , 8'h0b);
+    `assert(index, 1);
 
     upper_limit <= 1;
     #2
@@ -259,14 +263,14 @@ module SuperStack_tb();
     op <= `UNDERFLOW_GET;
     #2
     `assert(status, `NONE);
-    `assert(out   , 8'h0c);
+    `assert(getter, 8'h0c);
     `assert(index , 2);
 
     offset <= 1;
     op <= `UNDERFLOW_GET;
     #2
-    `assert(status, `BAD_OFFSET);
-    `assert(index , 2);
+    `assert(error, `BAD_OFFSET);
+    `assert(index, 2);
 
     // Reset index over current one and fill with zeroes
     op <= `INDEX_RESET;
