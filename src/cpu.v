@@ -917,6 +917,22 @@ module cpu
                 end
               end
 
+              // Conversions
+              `op_i32_wrap_i64: begin
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `i64)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  set_stack_data_32(`i32, stack_out_32);
+
+                  step <= EXEC2;
+                end
+              end
+
               // Reinterpretations
               `op_i32_reinterpret_f32: begin
                 if(result_type != `f32)

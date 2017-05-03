@@ -94,9 +94,11 @@
 `define op_i64_rotr   8'h8a
 
 // Conversions
-`define op_i64_extend_s_i32 8'hac
-`define op_i64_extend_u_i32 8'had
-`define op_f32_demote_f64   8'hb6
+`define op_i32_wrap_i64      8'ha7
+`define op_i64_extend_s_i32  8'hac
+`define op_i64_extend_u_i32  8'had
+`define op_f32_demote_f64    8'hb6
+`define op_f64_promote_f32   8'hbb
 
 // Reinterpretations
 `define op_i32_reinterpret_f32 8'hbc
