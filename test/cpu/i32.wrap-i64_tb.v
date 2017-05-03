@@ -23,7 +23,7 @@ module cpu_tb();
   wire                      mem_error;
 
   genrom #(
-    .ROMFILE("f64.reinterpret-i64.hex"),
+    .ROMFILE("i32.wrap-i64.hex"),
     .AW(MEM_ADDR),
     .DW(8),
     .EXTRA(MEM_EXTRA)
@@ -69,13 +69,14 @@ module cpu_tb();
   always #1 clk = ~clk;
 
   initial begin
-    $dumpfile("f64.reinterpret-i64_tb.vcd");
+    $dumpfile("i32.wrap-i64_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #18
-    `assert(result, 64'hc000000000000000);
-    `assert(result_type, `f64);
+    #22
+    `assert(result, 42);
+    `assert(result_type, `i32);
     `assert(result_empty, 0);
+    `assert(trap, `ENDED);
 
     $finish;
   end

@@ -150,6 +150,9 @@ test/cpu/i64.sub: $(BUILD)/cpu/i64.sub_tb.vcd
 test/cpu/conversions: test/cpu/f32.demote-f64
 test/cpu/f32.demote-f64: $(BUILD)/cpu/f32.demote-f64_tb.vcd
 
+test/cpu/conversions: test/cpu/i32.wrap-i64
+test/cpu/i32.wrap-i64: $(BUILD)/cpu/i32.wrap-i64_tb.vcd
+
 test/cpu/reinterpretations: test/cpu/i32.reinterpret-f32 \
 														test/cpu/i64.reinterpret-f64 \
 														test/cpu/f32.reinterpret-i32 \

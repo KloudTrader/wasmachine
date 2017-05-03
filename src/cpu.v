@@ -160,13 +160,9 @@ module cpu
   wire[             3:0] leb128_len;  // TODO number of bits
 
   if(USE_64B)
-    unpack_i64 leb128(mem_data[79:72], mem_data[71:64], mem_data[63:56],
-                      mem_data[55:48], mem_data[47:40], mem_data[39:32],
-                      mem_data[31:24], mem_data[23:16], mem_data[15: 8],
-                      mem_data[ 7: 0], leb128_out, leb128_len);
+    unpack_signed #(.N(64)) leb128(mem_data[79:0], leb128_out, leb128_len);
   else
-    unpack_i32 leb128(mem_data[79:72], mem_data[71:64], mem_data[63:56],
-                      mem_data[55:48], mem_data[47:40], leb128_out, leb128_len);
+    unpack_signed #(.N(32)) leb128(mem_data[79:40], leb128_out, leb128_len);
 
   // Double to Float
   wire        double_to_float_a_ack;
@@ -655,8 +651,11 @@ module cpu
               end
 
               `op_select: begin
+                if(result_type != `i32)
+                  trap <= `TYPE_MISMATCH;
+
                 // Validate both operators are of the same type
-                if(stack_out1[DATA_WIDTH+1:DATA_WIDTH] != stack_out2[DATA_WIDTH+1:DATA_WIDTH])
+                else if(stack_out1[DATA_WIDTH+1:DATA_WIDTH] != stack_out2[DATA_WIDTH+1:DATA_WIDTH])
                   trap <= `TYPES_MISMATCH;
 
                 else begin
@@ -710,14 +709,22 @@ module cpu
               end
 
               `op_f32_const: begin
-                stack_op <= `PUSH;
-                set_stack_data_32(`f32, mem_data[79:48]);
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
 
-                PC <= PC+4;
+                else begin
+                  stack_op <= `PUSH;
+                  set_stack_data_32(`f32, mem_data[79:48]);
+
+                  PC <= PC+4;
+                end
               end
 
               `op_f64_const: begin
-                if(!USE_64B)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(!USE_64B)
                   trap <= `NO_64B;
 
                 else begin
@@ -917,9 +924,28 @@ module cpu
                 end
               end
 
+              // Conversions
+              `op_i32_wrap_i64: begin
+                if(!USE_64B)
+                  trap <= `NO_64B;
+
+                else if(result_type != `i64)
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  stack_op <= `REPLACE;
+                  set_stack_data_32(`i32, stack_out_32);
+
+                  step <= EXEC2;
+                end
+              end
+
               // Reinterpretations
               `op_i32_reinterpret_f32: begin
-                if(result_type != `f32)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(result_type != `f32)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -931,7 +957,10 @@ module cpu
               end
 
               `op_i64_reinterpret_f64: begin
-                if(!USE_64B)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(!USE_64B)
                   trap <= `NO_64B;
 
                 else if(result_type != `f64)
@@ -946,7 +975,10 @@ module cpu
               end
 
               `op_f32_reinterpret_i32: begin
-                if(result_type != `i32)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(result_type != `i32)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -958,7 +990,10 @@ module cpu
               end
 
               `op_f64_reinterpret_i64: begin
-                if(!USE_64B)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(!USE_64B)
                   trap <= `NO_64B;
 
                 else if(result_type != `i64)
