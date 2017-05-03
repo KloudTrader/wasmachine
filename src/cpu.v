@@ -160,13 +160,9 @@ module cpu
   wire[             3:0] leb128_len;  // TODO number of bits
 
   if(USE_64B)
-    unpack_i64 leb128(mem_data[79:72], mem_data[71:64], mem_data[63:56],
-                      mem_data[55:48], mem_data[47:40], mem_data[39:32],
-                      mem_data[31:24], mem_data[23:16], mem_data[15: 8],
-                      mem_data[ 7: 0], leb128_out, leb128_len);
+    unpack_signed #(.N(64)) leb128(mem_data[79:0], leb128_out, leb128_len);
   else
-    unpack_i32 leb128(mem_data[79:72], mem_data[71:64], mem_data[63:56],
-                      mem_data[55:48], mem_data[47:40], leb128_out, leb128_len);
+    unpack_signed #(.N(32)) leb128(mem_data[79:40], leb128_out, leb128_len);
 
   // Double to Float
   wire        double_to_float_a_ack;
