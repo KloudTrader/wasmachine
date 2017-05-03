@@ -651,8 +651,11 @@ module cpu
               end
 
               `op_select: begin
+                if(result_type != `i32)
+                  trap <= `TYPE_MISMATCH;
+
                 // Validate both operators are of the same type
-                if(stack_out1[DATA_WIDTH+1:DATA_WIDTH] != stack_out2[DATA_WIDTH+1:DATA_WIDTH])
+                else if(stack_out1[DATA_WIDTH+1:DATA_WIDTH] != stack_out2[DATA_WIDTH+1:DATA_WIDTH])
                   trap <= `TYPES_MISMATCH;
 
                 else begin
@@ -706,14 +709,22 @@ module cpu
               end
 
               `op_f32_const: begin
-                stack_op <= `PUSH;
-                set_stack_data_32(`f32, mem_data[79:48]);
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
 
-                PC <= PC+4;
+                else begin
+                  stack_op <= `PUSH;
+                  set_stack_data_32(`f32, mem_data[79:48]);
+
+                  PC <= PC+4;
+                end
               end
 
               `op_f64_const: begin
-                if(!USE_64B)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(!USE_64B)
                   trap <= `NO_64B;
 
                 else begin
@@ -931,7 +942,10 @@ module cpu
 
               // Reinterpretations
               `op_i32_reinterpret_f32: begin
-                if(result_type != `f32)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(result_type != `f32)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -943,7 +957,10 @@ module cpu
               end
 
               `op_i64_reinterpret_f64: begin
-                if(!USE_64B)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(!USE_64B)
                   trap <= `NO_64B;
 
                 else if(result_type != `f64)
@@ -958,7 +975,10 @@ module cpu
               end
 
               `op_f32_reinterpret_i32: begin
-                if(result_type != `i32)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(result_type != `i32)
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -970,7 +990,10 @@ module cpu
               end
 
               `op_f64_reinterpret_i64: begin
-                if(!USE_64B)
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(!USE_64B)
                   trap <= `NO_64B;
 
                 else if(result_type != `i64)
