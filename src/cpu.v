@@ -8,8 +8,9 @@
 
 module cpu
 #(
-  parameter MEM_DEPTH   = 3,
-  parameter STACK_DEPTH = 7,
+  parameter MEM_DEPTH     = 3,
+  parameter STACK_DEPTH   = 1,
+  parameter ZEROED_SLICES = 1,
 
   parameter HAS_FPU = 1,
   parameter HAS_RAM = 1,
@@ -59,11 +60,15 @@ module cpu
   wire [STACK_WIDTH-1:0] stack_out;
   wire [STACK_WIDTH-1:0] stack_out1;
   wire [STACK_WIDTH-1:0] stack_out2;
-  wire [            2:0] stack_status;
+  wire [STACK_WIDTH-1:0] stack_getter;
+
+  wire [1:0] stack_status;
+  wire [1:0] stack_error;
 
   SuperStack #(
     .WIDTH(STACK_WIDTH),
-    .DEPTH(STACK_DEPTH)
+    .DEPTH(STACK_DEPTH),
+    .ZEROED_SLICES(ZEROED_SLICES)
   )
   stack (
     .clk(clk),
@@ -79,7 +84,9 @@ module cpu
     .out(stack_out),
     .out1(stack_out1),
     .out2(stack_out2),
-    .status(stack_status)
+    .getter(stack_getter),
+    .status(stack_status),
+    .error(stack_error)
   );
 
   // Block stack
@@ -96,7 +103,7 @@ module cpu
   localparam TYPE_H = TYPE_L  +1;
 
   localparam BLOCK_STACK_WIDTH = TYPE_H+1;
-  localparam BLOCK_STACK_DEPTH = 3;
+  localparam BLOCK_STACK_DEPTH = 1;
 
   reg  [                  2:0] blockStack_op;
   reg  [BLOCK_STACK_WIDTH-1:0] blockStack_data;
@@ -105,7 +112,9 @@ module cpu
   reg  [BLOCK_STACK_DEPTH  :0] blockStack_lower = 0;
   wire [BLOCK_STACK_DEPTH  :0] blockStack_index;
   wire [BLOCK_STACK_WIDTH-1:0] blockStack_out;
-  wire [                  2:0] blockStack_status;
+
+  wire [1:0] blockStack_status;
+  wire [1:0] blockStack_error;
 
   SuperStack #(
     .WIDTH(BLOCK_STACK_WIDTH),
@@ -122,7 +131,8 @@ module cpu
     .lower_limit(blockStack_lower),
     .index(blockStack_index),
     .out(blockStack_out),
-    .status(blockStack_status)
+    .status(blockStack_status),
+    .error(blockStack_error)
   );
 
   // Call stack
@@ -141,7 +151,9 @@ module cpu
   reg  [                 1:0] callStack_op;
   reg  [CALL_STACK_WIDTH-1:0] callStack_data;
   wire [CALL_STACK_WIDTH-1:0] callStack_out;
-  wire [                 1:0] callStack_status;
+
+  wire [1:0] callStack_status;
+  wire [1:0] callStack_error;
 
   stack #(
     .WIDTH(CALL_STACK_WIDTH),
@@ -153,7 +165,8 @@ module cpu
     .op(callStack_op),
     .data(callStack_data),
     .tos(callStack_out),
-    .status(callStack_status)
+    .status(callStack_status),
+    .error(callStack_error)
   );
 
   // LEB128 - decoder of `varintN` values
@@ -509,7 +522,14 @@ module cpu
         end
 
         FETCH2: begin
-          if(stack_status > `EMPTY) trap <= `STACK_ERROR;
+          if(stack_error)
+            trap <= `STACK_ERROR;
+
+          else if(blockStack_error)
+            trap <= `BLOCK_STACK_ERROR;
+
+          else if(callStack_error)
+            trap <= `CALL_STACK_ERROR;
 
           else
             step <= EXEC;
@@ -551,6 +571,7 @@ module cpu
 
                 else if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
+
                 else begin
                   // Add stack slice if conditional is true or we have an `else`
                   if(stack_out_32 || mem_data[39:8])
@@ -903,7 +924,7 @@ module cpu
 
                   if(double_to_float_z_stb) begin
                     stack_op   <= `REPLACE;
-                    stack_data <= {`f32, 32'b0, double_to_float_z};
+                    set_stack_data_32(`f32, double_to_float_z);
 
                     double_to_float_z_ack <= 1;
                   end
@@ -1187,7 +1208,7 @@ module cpu
             // Control flow operators
             `op_br,
             `op_br_if: begin
-              if(blockStack_status > `EMPTY)
+              if(blockStack_error)
                 trap <= `BLOCK_STACK_ERROR;
 
               else
@@ -1232,11 +1253,11 @@ module cpu
 
             // Variable access
             `op_get_local: begin
-              if(stack_status > `EMPTY) trap <= `STACK_ERROR;
+              if(stack_error) trap <= `STACK_ERROR;
 
               else begin
                 stack_op   <= `PUSH;
-                stack_data <= stack_out;
+                stack_data <= stack_getter;
               end
             end
           endcase
@@ -1251,7 +1272,7 @@ module cpu
 
           case (opcode)
             `op_br_table: begin
-              if(blockStack_status > `EMPTY)
+              if(blockStack_error)
                 trap <= `BLOCK_STACK_ERROR;
 
               else
