@@ -1,9 +1,8 @@
 // Types
-// TODO Remove useless bits when not using FPU or 64 bits data
-`define i32 2'b00
-`define i64 2'b01
-`define f32 2'b10
-`define f64 2'b11
+`define i32 (HAS_FPU ? (USE_64B ? 2'b00 : 1'b0) : 1'b0)
+`define i64 (HAS_FPU ? (USE_64B ? 2'b01 : 1'b0) : 1'b1)
+`define f32 (HAS_FPU ? (USE_64B ? 2'b10 : 1'b1) : 1'b0)
+`define f64 (HAS_FPU ? (USE_64B ? 2'b11 : 1'b1) : 1'b1)
 
 // Traps
 `define NONE              0

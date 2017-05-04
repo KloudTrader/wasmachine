@@ -44,6 +44,9 @@ module cpu_tb();
   // CPU
   //
 
+  parameter HAS_FPU = 1;
+  parameter USE_64B = 1;
+
   reg                  reset = 1;
   reg  [   MEM_ADDR:0] pc    = 17;
   reg  [STACK_DEPTH:0] index = 1;
@@ -53,6 +56,8 @@ module cpu_tb();
   wire [          3:0] trap;
 
   cpu #(
+    .HAS_FPU(HAS_FPU),
+    .USE_64B(USE_64B),
     .MEM_DEPTH(MEM_ADDR),
     .STACK_DEPTH(STACK_DEPTH)
   )

@@ -43,12 +43,17 @@ module cpu_tb();
   // CPU
   //
 
+  parameter HAS_FPU = 1;
+  parameter USE_64B = 1;
+
   wire [63:0] result;
   wire [ 1:0] result_type;
   wire        result_empty;
   wire [ 3:0] trap;
 
   cpu #(
+    .HAS_FPU(HAS_FPU),
+    .USE_64B(USE_64B),
     .MEM_DEPTH(MEM_ADDR)
   )
   dut

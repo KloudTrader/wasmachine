@@ -31,11 +31,12 @@ module cpu
   input                           mem_error,
 
   // Stack status
-  input  wire                      pushStack,
-  input  wire [2+DATA_WIDTH_MSB:0] stack_in,
-  output wire [  DATA_WIDTH_MSB:0] result,
-  output wire [               1:0] result_type,
-  output wire                      result_empty
+  input  wire                    pushStack,
+  input  wire [ STACK_WIDTH-1:0] stack_in,
+  // TODO stack_out
+  output wire [DATA_WIDTH_MSB:0] result,
+  output wire [  TYPE_WIDTH-1:0] result_type,
+  output wire                    result_empty
 );
 
   localparam DATA_WIDTH     = USE_64B ? 64 : 32;
@@ -44,8 +45,8 @@ module cpu
   localparam MEM_EXTRA = $clog2(11);
 
   // Stack
-  // TODO Remove useless bits when not using FPU or 64 bits data
-  localparam STACK_WIDTH = 2+DATA_WIDTH;
+  localparam  TYPE_WIDTH = USE_64B + HAS_FPU;
+  localparam STACK_WIDTH = TYPE_WIDTH + DATA_WIDTH;
 
   reg  [            2:0] stack_op;
   reg  [STACK_WIDTH-1:0] stack_data;
@@ -157,7 +158,7 @@ module cpu
 
   // LEB128 - decoder of `varintN` values
   wire[DATA_WIDTH_MSB:0] leb128_out;
-  wire[             3:0] leb128_len;  // TODO number of bits
+  wire[     USE_64B+2:0] leb128_len;
 
   if(USE_64B)
     unpack_signed #(.N(64)) leb128(mem_data[79:0], leb128_out, leb128_len);
@@ -299,13 +300,15 @@ module cpu
     if(stackSlice[RETURN_H:RETURN_L] == 7'h40)
       stack_op <= `INDEX_RESET;
 
-    else if(7'h7f - stackSlice[RETURN_H:RETURN_L] == data[DATA_WIDTH+1:DATA_WIDTH]) begin
+    // TODO fix check when dissabling 64 bits support
+    else if(!checkType(7'h7f - stackSlice[RETURN_H:RETURN_L],
+                       data[DATA_WIDTH+1:DATA_WIDTH]))
+      trap <= `TYPE_MISMATCH;
+
+    else begin
       stack_op   <= `INDEX_RESET_AND_PUSH;
       stack_data <= data;
     end
-
-    else
-      trap <= `TYPE_MISMATCH;
   endtask
 
   task block_loop_back;
@@ -454,6 +457,17 @@ module cpu
             +   (d[28] + d[29] + d[30] + d[31])));
   endfunction
 
+  function checkType;
+    input [1:0] actual;
+    input [1:0] expected;
+
+    if(HAS_FPU || USE_64B)
+      checkType = actual == expected;
+
+    else
+      checkType = 1;
+  endfunction
+
 
   //
   // Main loop
@@ -535,6 +549,8 @@ module cpu
                 if(stack_status == `EMPTY)
                   trap <= `STACK_EMPTY;
 
+                else if(!checkType(result_type, `i32))
+                  trap <= `TYPE_MISMATCH;
                 else begin
                   // Add stack slice if conditional is true or we have an `else`
                   if(stack_out_32 || mem_data[39:8])
@@ -586,7 +602,7 @@ module cpu
                 if(stack_status == `EMPTY)
                   trap <= `STACK_EMPTY;
 
-                else if(result_type != `i32)
+                else if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
 
                 // Condition is `true`, do the break
@@ -606,7 +622,7 @@ module cpu
                 if(stack_status == `EMPTY)
                   trap <= `STACK_EMPTY;
 
-                else if(result_type != `i32)
+                else if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -651,11 +667,15 @@ module cpu
               end
 
               `op_select: begin
-                if(result_type != `i32)
+                if(stack_status == `EMPTY)
+                  trap <= `STACK_EMPTY;
+
+                else if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
 
                 // Validate both operators are of the same type
-                else if(stack_out1[DATA_WIDTH+1:DATA_WIDTH] != stack_out2[DATA_WIDTH+1:DATA_WIDTH])
+                else if(!checkType(stack_out1[DATA_WIDTH+1:DATA_WIDTH],
+                                   stack_out2[DATA_WIDTH+1:DATA_WIDTH]))
                   trap <= `TYPES_MISMATCH;
 
                 else begin
@@ -737,7 +757,7 @@ module cpu
 
               // Comparison operators
               `op_i32_eqz: begin
-                if(result_type != `i32)
+                if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -750,7 +770,7 @@ module cpu
                 if(!USE_64B)
                   trap <= `NO_64B;
 
-                else if(result_type != `i64)
+                else if(!checkType(result_type, `i64))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -771,7 +791,7 @@ module cpu
               end
 
               `op_i32_ctz: begin
-                if(result_type != `i32)
+                if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -781,7 +801,7 @@ module cpu
               end
 
               `op_i32_popcnt: begin
-                if(result_type != `i32)
+                if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -794,7 +814,7 @@ module cpu
                 if(!USE_64B)
                   trap <= `NO_64B;
 
-                else if(result_type != `i64)
+                else if(!checkType(result_type, `i64))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -812,7 +832,7 @@ module cpu
                 if(!USE_64B)
                   trap <= `NO_64B;
 
-                else if(result_type != `i64)
+                else if(!checkType(result_type, `i64))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -830,7 +850,7 @@ module cpu
                 if(!USE_64B)
                   trap <= `NO_64B;
 
-                else if(result_type != `i64)
+                else if(!checkType(result_type, `i64))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -845,7 +865,7 @@ module cpu
                 if(!USE_64B)
                   trap <= `NO_64B;
 
-                else if(result_type != `i32)
+                else if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -858,7 +878,7 @@ module cpu
                 if(!USE_64B)
                   trap <= `NO_64B;
 
-                else if(result_type != `i32)
+                else if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -874,14 +894,14 @@ module cpu
                 else if(!USE_64B)
                   trap <= `NO_64B;
 
+                else if(!checkType(result_type, `f64))
+                  trap <= `TYPE_MISMATCH;
+
                 else begin
                   double_to_float_a_stb <= 0;
                   double_to_float_z_ack <= 0;
 
-                  if(result_type != `f64)
-                    trap <= `TYPE_MISMATCH;
-
-                  else if(double_to_float_z_stb) begin
+                  if(double_to_float_z_stb) begin
                     stack_op   <= `REPLACE;
                     stack_data <= {`f32, 32'b0, double_to_float_z};
 
@@ -904,6 +924,9 @@ module cpu
 
                 else if(!USE_64B)
                   trap <= `NO_64B;
+
+                else if(!checkType(result_type, `f32))
+                  trap <= `TYPE_MISMATCH;
 
                 else begin
                   // if(result_type != `f32)
@@ -945,7 +968,7 @@ module cpu
                 if(!HAS_FPU)
                   trap <= `NO_FPU;
 
-                else if(result_type != `f32)
+                else if(!checkType(result_type, `f32))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -963,7 +986,7 @@ module cpu
                 else if(!USE_64B)
                   trap <= `NO_64B;
 
-                else if(result_type != `f64)
+                else if(!checkType(result_type, `f64))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -978,7 +1001,7 @@ module cpu
                 if(!HAS_FPU)
                   trap <= `NO_FPU;
 
-                else if(result_type != `i32)
+                else if(!checkType(result_type, `i32))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -996,7 +1019,7 @@ module cpu
                 else if(!USE_64B)
                   trap <= `NO_64B;
 
-                else if(result_type != `i64)
+                else if(!checkType(result_type, `i64))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -1034,7 +1057,8 @@ module cpu
               `op_i32_rotl,
               `op_i32_rotr:
               begin
-                if(stack_out[DATA_WIDTH+1:DATA_WIDTH] != `i32 || stack_out1[DATA_WIDTH+1:DATA_WIDTH] != `i32)
+                if(!checkType(stack_out1[DATA_WIDTH+1:DATA_WIDTH], `i32)
+                || !checkType(stack_out [DATA_WIDTH+1:DATA_WIDTH], `i32))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
@@ -1104,7 +1128,8 @@ module cpu
                 if(!USE_64B)
                   trap <= `NO_64B;
 
-                else if(stack_out[DATA_WIDTH+1:DATA_WIDTH] != `i64 || stack_out1[DATA_WIDTH+1:DATA_WIDTH] != `i64)
+                else if(!checkType(stack_out1[DATA_WIDTH+1:DATA_WIDTH], `i64)
+                ||      !checkType(stack_out [DATA_WIDTH+1:DATA_WIDTH], `i64))
                   trap <= `TYPE_MISMATCH;
 
                 else begin
