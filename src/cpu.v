@@ -185,7 +185,13 @@ module cpu
   wire        double_to_float_z_stb;
   reg         double_to_float_z_ack;
 
-  if(HAS_FPU && USE_64B)
+  wire        float_to_double_a_ack;
+  reg         float_to_double_a_stb;
+  wire [63:0] float_to_double_z;
+  wire        float_to_double_z_stb;
+  reg         float_to_double_z_ack;
+
+  if(HAS_FPU && USE_64B) begin
     double_to_float d2f(
       .clk(clk),
       .rst(reset),
@@ -196,6 +202,18 @@ module cpu
       .output_z_stb(double_to_float_z_stb),
       .output_z_ack(double_to_float_z_ack)
     );
+
+    float_to_double f2d(
+      .clk(clk),
+      .rst(reset),
+      .input_a_ack(float_to_double_a_ack),
+      .input_a(stack_out_32),
+      .input_a_stb(float_to_double_a_stb),
+      .output_z(float_to_double_z),
+      .output_z_stb(float_to_double_z_stb),
+      .output_z_ack(float_to_double_z_ack)
+    );
+  end
 
 
   //
@@ -950,21 +968,23 @@ module cpu
                   trap <= `TYPE_MISMATCH;
 
                 else begin
-                  // if(result_type != `f32)
-                  //   trap <= `TYPE_MISMATCH;
-                  //
-                  // else if(input_a_ack) begin
-                  //
-                  // end
-                  //
-                  // else if(output_z_stb) begin
-                  //
-                  //   float_to_double_ack <= 1;
-                  // end
-                  //
-                  // // Wait at the same step until the FPU is ready
-                  // else
-                  //   step <= EXEC;
+                  float_to_double_a_stb <= 0;
+                  float_to_double_z_ack <= 0;
+
+                  if(float_to_double_z_stb) begin
+                    stack_op   <= `REPLACE;
+                    stack_data <= {`f64, float_to_double_z};
+
+                    float_to_double_z_ack <= 1;
+                  end
+
+                  else begin
+                    if(float_to_double_a_ack)
+                      float_to_double_a_stb <= 1;
+
+                    // Wait at the same step until the FPU is ready
+                    step <= EXEC;
+                  end
                 end
               end
 
