@@ -77,10 +77,16 @@ module cpu_tb();
     $dumpfile("i32.reinterpret-f32_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #18
-    `assert(result, 32'hc0000000);
-    `assert(result_type, `i32);
-    `assert(result_empty, 0);
+    if(HAS_FPU) begin
+      #18
+      `assert(result, 32'hc0000000);
+      `assert(result_type, `i32);
+      `assert(result_empty, 0);
+    end
+    else begin
+      #12
+      `assert(trap, `NO_FPU);
+    end
 
     $finish;
   end

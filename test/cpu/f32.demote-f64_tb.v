@@ -75,15 +75,19 @@ module cpu_tb();
     $dumpfile("f32.demote-f64_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    if(USE_64B) begin
+    if(HAS_FPU && USE_64B) begin
       #26
       `assert(result, 32'hc0000000);
       `assert(result_type, `f32);
       `assert(result_empty, 0);
     end
-    else begin
+    else if(HAS_FPU) begin
       #12
       `assert(trap, `NO_64B);
+    end
+    else begin
+      #12
+      `assert(trap, `NO_FPU);
     end
 
     $finish;
