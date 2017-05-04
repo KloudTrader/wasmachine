@@ -10,7 +10,7 @@ VENDOR_DEPS = -y vendor/fpu/double_to_float \
 							-y vendor/fpu/float_to_double \
 							-y vendor/LEB128
 
-IVERILOG = iverilog -g2005-sv -I $(SRC) -y $(SRC) $(VENDOR_DEPS)
+IVERILOG = iverilog -g2005-sv -I $(SRC) -y $(SRC) $(VENDOR_DEPS) $(parameters)
 GTKWAVE  = gtkwave
 VVP      = vvp -N
 

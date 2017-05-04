@@ -27,12 +27,12 @@ Currently it's in an initial state but is able to exec some basic commands.
 
 ## Roadmap
 
-1. Implement integer mathematical operations
-2. Support for functions calling
+1. ~Implement integer mathematical operations~
+2. ~Support for functions calling~
 3. Add a 64 bits FPU for the floating point operations
 4. Memory-based operations
 5. Modules loader in RAM
-6. Replace usage of ROM for modules on RAM
+6. ~Replace usage of ROM for modules on RAM~
 7. Accept call of functions from outside
 8. Use a pipelined design
 
@@ -45,4 +45,20 @@ They can be automatically upgraded executing
 
 ```sh
 make update-dependencies
+```
+
+## Testing
+
+If you want to test all the modules at once with all the features enabled (the
+default build configuration), simply exec:
+
+```sh
+make test
+```
+
+You can also test the modules disabling some features using the `parameters`
+argument, that will be directly passed to the `iverilog` executable:
+
+```sh
+make test parameters='-Pcpu_tb.HAS_FPU=0 -Pcpu_tb.USE_64B=0'
 ```
