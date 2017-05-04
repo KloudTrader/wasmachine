@@ -75,10 +75,16 @@ module cpu_tb();
     $dumpfile("f32.demote-f64_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #26
-    `assert(result, 32'hc0000000);
-    `assert(result_type, `f32);
-    `assert(result_empty, 0);
+    if(USE_64B) begin
+      #26
+      `assert(result, 32'hc0000000);
+      `assert(result_type, `f32);
+      `assert(result_empty, 0);
+    end
+    else begin
+      #12
+      `assert(trap, `NO_64B);
+    end
 
     $finish;
   end

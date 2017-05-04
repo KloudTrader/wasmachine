@@ -77,11 +77,17 @@ module cpu_tb();
     $dumpfile("i32.wrap-i64_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #22
-    `assert(result, 42);
-    `assert(result_type, `i32);
-    `assert(result_empty, 0);
-    `assert(trap, `ENDED);
+    if(USE_64B) begin
+      #22
+      `assert(result, 42);
+      `assert(result_type, `i32);
+      `assert(result_empty, 0);
+      `assert(trap, `ENDED);
+    end
+    else begin
+      #12
+      `assert(trap, `NO_64B);
+    end
 
     $finish;
   end

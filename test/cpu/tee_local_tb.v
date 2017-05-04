@@ -86,10 +86,16 @@ module cpu_tb();
     #1
     reset <= 0;
 
-    #39
-    `assert(result, 2);
-    `assert(result_type, `i64);
-    `assert(result_empty, 0);
+    if(USE_64B) begin
+      #39
+      `assert(result, 2);
+      `assert(result_type, `i64);
+      `assert(result_empty, 0);
+    end
+    else begin
+      #12
+      `assert(trap, `NO_64B);
+    end
 
     $finish;
   end

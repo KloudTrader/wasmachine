@@ -77,11 +77,17 @@ module cpu_tb();
     $dumpfile("br_table1_tb.vcd");
     $dumpvars(0, cpu_tb);
 
-    #50
-    `assert(result, 3);
-    `assert(result_type, `i64);
-    `assert(result_empty, 0);
-    `assert(trap, `ENDED);
+    if(USE_64B) begin
+      #50
+      `assert(result, 3);
+      `assert(result_type, `i64);
+      `assert(result_empty, 0);
+      `assert(trap, `ENDED);
+    end
+    else begin
+      #24
+      `assert(trap, `NO_64B);
+    end
 
     $finish;
   end
