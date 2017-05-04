@@ -36,7 +36,7 @@ module stack
   assign tos = stack[index-1];
 
   // Adjust status when index has changed
-  always @(index) begin
+  always @* begin
     if(index == MAX_STACK)
       status <= `FULL;
     else if(index == 0)

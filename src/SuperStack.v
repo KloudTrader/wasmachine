@@ -50,7 +50,7 @@ module SuperStack
   assign out2 = stack[index-3];
 
   // Adjust status when index or underflow limit or stack content has¡ve changed
-  always @(*) begin
+  always @* begin
     if(index == MAX_STACK)
       status <= `FULL;
     else if(index == underflow_limit)

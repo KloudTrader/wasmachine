@@ -79,7 +79,7 @@ module cpu_tb();
     #1
     reset <= 0;
 
-    #275
+    #247
     `assert(result, 3);
     `assert(result_empty, 0);
 
