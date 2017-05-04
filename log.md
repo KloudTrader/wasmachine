@@ -426,3 +426,102 @@ then in the next cycle after writting (don't need for an extra one to fetch the
 data) and also to shorter paths.
 
 Async asignations are being done when going out of the `always` block.
+
+Warning: Replacing memory \stack with list of registers. See src/SuperStack.v:47, src/SuperStack.v:97
+
+```verilog
+out <= stack[index-1];
+stack[index] = data;
+```
+
+https://www.reddit.com/r/yosys/comments/2kgfdr/incorrect_synthesis_results_for_multiport/cln0vnm/
+
+http://www.sunburst-design.com/papers/CummingsSNUG2000SJ_NBA_rev1_2.pdf
+
+# 2017-04-28
+
+Stacks status would be splitted in two fields, status and error. This way would
+allow to simplify and speed up its code by not needing blocking assignments and
+use instead constant ones and/or several `always` blocks, but at the same time
+would allow a better identification of when an actual error has occured. Output
+of stack values and for `UNDERFLOW_GET` would also splitted instead of reused,
+leading to better isolation and also allow to do the same improvements too.
+
+# 2017-04-29
+
+By disabling the filling of zeroes we improve performance more than twice (25-60
+MHz) almost up to the regular stack (70 MHz). Alternatives would be to do the
+zeroed in parallel by preserving someway the base address for each group, or
+using a bitmap of the setted variables on each call slice, or do the zeroed in
+several cycles by using a requests queue.
+
+When using blocking assigment and reuse of `index` on stack `POP` the frequency
+was up to 78.72 MHz, while using nonblocking and duplicated code it lowered down
+to 75.08 MHz. On the other hand, using nonblocking assigment and another
+`always` block it raised up to 80.23 MHz. All of them simulating for HX8k.
+
+# 2017-04-30
+
+CPU synth speed (hx8k):
+
+HAS_FPU | HAS_RAM | USE_64B
+=============================
+No      | No      | No      | 54.17 MHz
+No      | No      | Yes     | Failed
+Yes     | No      | No      | 54.17 MHz
+Yes     | Yes     | Yes     | Failed
+
+In the successful cases, the longest path has 6 logic levels and it's related to
+decodification of LEB128 i64 values (i0[7] -> o[24]).
+
+In the cases where it failed, it lasted several minutes versus the few seconds
+it lasted in the other cases, and it was when executing `berkeley-abc` with the
+next output:
+
+```
+Running ABC command: berkeley-abc -s -f <abc-temp-dir>/abc.script 2>&1
+ABC: ABC command line: "source <abc-temp-dir>/abc.script".
+ABC:
+ABC: + read_blif <abc-temp-dir>/input.blif
+ABC: + read_lut <abc-temp-dir>/lutdefs.txt
+ABC: + strash
+ABC: + dc2
+ABC: + scorr
+ABC: Warning: The network is combinational (run "fraig" or "fraig_sweep").
+ABC: + ifraig
+ABC: + retime -o
+ABC: + strash
+ABC: + dch -f
+ABC: + if
+ABC: + mfs
+ABC: + lutpack
+ABC: berkeley-abc: src/opt/lpk/lpkCore.c:471: Lpk_ResynthesizeNodeNew: Assertion `Abc_ObjLevel(pObjNew) <= Required' failed.
+ABC: Aborted (core dumped)
+ERROR: ABC: execution of command "berkeley-abc -s -f /tmp/yosys-abc-PzfHLu/abc.script 2>&1" failed: return code 134.
+```
+
+Seems it's related to the long paths needed for the synthetization of a 64 bits
+divisor, that `berkeley-abc` is not able to fully manage so long paths.
+
+https://github.com/WebAssembly/design/issues/1050
+
+https://github.com/kanaka/wac
+
+# 2017-05-01
+
+[Update BRAM without regenerate net list](http://stackoverflow.com/a/36858486/586382)
+
+According to http://stackoverflow.com/a/41509289/586382, seems that the BRAM
+inference just only replace an array of registers and their manipulation with
+its equivalent code using the correct simulation model just like a preprocessor,
+there's no magic or configuration involved and both are interchangeable.
+
+http://stackoverflow.com/questions/41499494/how-can-i-use-ice40-4k-block-ram-in-512x8-read-mode-with-icestorm?rq=1#comment74479435_41509289
+
+# 2017-05-04
+
+Iverilog `-P<module>.<parameter>=<value>` allow to set parameters from command
+line.
+
+`==` compares only `0`'s and `1`'s, giving undefined if any bit is `x` or `z`.
+`===` compares also the `x` and `z` bits.
