@@ -1,8 +1,8 @@
 // Types
-`define i32 (HAS_FPU ? (USE_64B ? 2'b00 : 1'b0) : 1'b0)
-`define i64 (HAS_FPU ? (USE_64B ? 2'b01 : 1'b0) : 1'b1)
-`define f32 (HAS_FPU ? (USE_64B ? 2'b10 : 1'b1) : 1'b0)
-`define f64 (HAS_FPU ? (USE_64B ? 2'b11 : 1'b1) : 1'b1)
+`define i32 (HAS_FPU ? (USE_64B ? 2'b00 : 1'b0) : (USE_64B ? 1'b0 : 2'bx))
+`define i64 (HAS_FPU ? (USE_64B ? 2'b01 : 1'b0) : (USE_64B ? 1'b1 : 2'bx))
+`define f32 (HAS_FPU ? (USE_64B ? 2'b10 : 1'b1) : (USE_64B ? 1'b0 : 2'bx))
+`define f64 (HAS_FPU ? (USE_64B ? 2'b11 : 1'b1) : (USE_64B ? 1'b1 : 2'bx))
 
 // Traps
 `define NONE              0
