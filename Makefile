@@ -6,6 +6,8 @@ BUILD = build
 NAME = wasmachine
 DEPS = $(SRC)/genrom.v $(SRC)/$(NAME).v
 
+DEVICE=8k
+
 VENDOR_DEPS = -y vendor/fpu/double_to_float \
 							-y vendor/fpu/float_to_double \
 							-y vendor/LEB128
@@ -199,16 +201,27 @@ $(BUILD)/genrom_tb.vcd: $(BUILD)/genrom_tb
 	|| ($(ECHO) "$(RED)FAIL$(NC)" && exit 1)
 
 
-#------------------------------
-#-- Sintesis completa
-#------------------------------
-$(NAME).bin: resources/$(NAME).pcf $(DEPS) test/prog.list
+$(NAME).bin: $(DEPS) test/prog.list
+	mkdir -p build
+	yosys -p "synth_ice40 -blif build/$(NAME).blif" $(DEPS)
+	arachne-pnr -d $(DEVICE) build/$(NAME).blif -o build/$(NAME).asc
+	icepack build/$(NAME).asc $(NAME).bin
 
-	#-- Sintesis
-	yosys -p "synth_ice40 -blif $(NAME).blif" $(DEPS)
 
-	#-- Place & route
-	arachne-pnr -d 1k -p resources/$(NAME).pcf $(NAME).blif -o $(NAME).txt
+synth/%: test/%
+	mkdir -p build
+	yosys -p "synth_ice40 -blif build/$(@F).blif" src/$(@F).v
+	arachne-pnr -d $(DEVICE) build/$(@F).blif -o build/$(@F).asc
 
-	#-- Generar binario final, listo para descargar en fgpa
-	icepack $(NAME).txt $(NAME).bin
+#synth/cpu: test/cpu
+synth/cpu:
+	mkdir -p build
+	yosys -p "synth_ice40 -blif build/$(@F).blif" src/cpu.v src/stack.v \
+			src/SuperStack.v vendor/fpu/double_to_float/double_to_float.v \
+			vendor/fpu/float_to_double/float_to_double.v \
+			vendor/LEB128/unpack_signed.v vendor/LEB128/unpack_unsigned.v
+	arachne-pnr -d $(DEVICE) build/$(@F).blif -o build/$(@F).asc
+
+
+time/%: synth/%
+	icetime -d hx$(DEVICE) -mtr build/$(@F).rpt build/$(@F).asc

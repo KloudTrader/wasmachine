@@ -525,3 +525,65 @@ line.
 
 `==` compares only `0`'s and `1`'s, giving undefined if any bit is `x` or `z`.
 `===` compares also the `x` and `z` bits.
+
+# 2017-05-11
+
+There will always be just only one top module (others will be imported by it),
+so there will be exported only the elements of its `exports` section, if any. It
+could be on memory, but it would be managed only by the controller, so it's the
+only one that needs a reference (AKA its memory address) to it.
+
+Initializer expressions are like regular function code, so when loading a module
+they would be executed by the CPU and set directly its value at its namespace.
+
+http://webassembly.org/docs/modules/#linear-memory-section
+"When a maximum memory size is not declared, on architectures with limited
+virtual address space, engines should allocate only the initial size and
+reallocate on demand". Since we don't have (and will not have?) a virtual memory
+scheme, this phrase can be interpreted that it's valid for the memory of a
+module to be directly mapped to RAM and move it when calling to `grow_memory` if
+needed.
+
+WAsD modules sections (the same stored at memory after a WebAssembly modules has
+finished to be loaded) are:
+
+0. sections pointers
+1. functions indexes
+2. tables indexes
+3. memories indexes
+4. global section
+5. exports
+6. functions bodies
+7. tables
+8. memories
+
+Both memory and tables sizes can increase, although this last one is not defined
+to do it at the MVP.
+
+To have loaded several modules, a mapping would need to be available at start of
+the memory. Since modules need to have all its dependencies loaded first, and in
+case of unloading it would need to be done in reverse order too, fixed size
+sections would be set in ascending memory positions, and size variable ones
+(tables and memories) would be put at the end as a shared "heap". It would need
+to be find some way to address them in an eficient way.
+
+https://lighttomorrow.wordpress.com/2011/10/01/embedded-linux-memory-management-line-by-line-1-intro-to-mmu/
+
+# 2017-05-25
+
+https://github.com/dcodeIO/AssemblyScript
+
+# 2017-10-03
+
+Currently stack is a black-box where you (mostly) only can access to ToS value
+both to read and write, needing to pause all operations until previous ones has
+finished. By using a plain memory model and making the CPU to manage the stack
+in RAM itself, it's possible to do several writes out of order without needing
+to have the previous ones written if they are not needed by the current value.
+To do so, it's only needed to store a guard variable with the index where we
+are sure all values are correctly written, and start queueing them when trying
+to read from beyond this limit.
+
+Modules that would need several cycles to operate will have a `ready` line to
+know when they have finished to calc their values, so callers can be able to
+interrupt their operations. This apply to the pipelined steps too.

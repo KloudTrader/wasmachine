@@ -13,6 +13,7 @@
 
 // Call operators
 `define op_call          8'h10
+`define op_call_indirect 8'h11
 
 // Parametric operators
 `define op_drop   8'h1a
@@ -22,8 +23,12 @@
 `define op_get_local  8'h20
 `define op_set_local  8'h21
 `define op_tee_local  8'h22
+`define op_get_global 8'h23
+`define op_set_global 8'h24
 
 // Memory-related operators
+`define op_current_memory 8'h3f
+`define op_grow_memory    8'h40
 
 // Constants
 `define op_i32_const 8'h41
@@ -43,6 +48,7 @@
 `define op_i32_le_u 8'h4d
 `define op_i32_ge_s 8'h4e
 `define op_i32_ge_u 8'h4f
+
 `define op_i64_eqz  8'h50
 `define op_i64_eq   8'h51
 `define op_i64_ne   8'h52
@@ -54,6 +60,20 @@
 `define op_i64_le_u 8'h58
 `define op_i64_ge_s 8'h59
 `define op_i64_ge_u 8'h5a
+
+`define op_f32_eq   8'h5b
+`define op_f32_ne   8'h5c
+`define op_f32_lt   8'h5d
+`define op_f32_gt   8'h5e
+`define op_f32_le   8'h5f
+`define op_f32_ge   8'h60
+
+`define op_f64_eq   8'h61
+`define op_f64_ne   8'h62
+`define op_f64_lt   8'h63
+`define op_f64_gt   8'h64
+`define op_f64_le   8'h65
+`define op_f64_ge   8'h66
 
 // Numeric operators
 `define op_i32_clz    8'h67
@@ -74,6 +94,7 @@
 `define op_i32_shr_u  8'h76
 `define op_i32_rotl   8'h77
 `define op_i32_rotr   8'h78
+
 `define op_i64_clz    8'h79
 `define op_i64_ctz    8'h7a
 `define op_i64_popcnt 8'h7b
@@ -95,9 +116,12 @@
 
 // Conversions
 `define op_i32_wrap_i64      8'ha7
+
 `define op_i64_extend_s_i32  8'hac
 `define op_i64_extend_u_i32  8'had
+
 `define op_f32_demote_f64    8'hb6
+
 `define op_f64_promote_f32   8'hbb
 
 // Reinterpretations

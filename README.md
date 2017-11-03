@@ -13,12 +13,35 @@ Currently it's in an initial state but is able to exec some basic commands.
 
 - Stack-based (calls, blocks and operands), variable-length CISC architecture
   following the WebAssembly spec design
-- Implemented an "expanded" version of the binary format
-  - Inlined destination of blocks and branches labels
-  - Decoded LEB128 targets for `br_table`
 - Strict type-checking on runtime
 - Optionally disable floating point, memory and 64 bits operations at instance
   time to generate a simpler core for smaller FPGAs
+
+## WebAssembly Decoded (WAsD)
+
+WebAssembly specification is mostly focused on reduce size length, mostly for
+transmission purposses, but make it difficult and ineficient for direct
+execution, needing by design to be translated to the target environment.
+Wasmachine implement a version of the WebAssembly specification optimized for
+direct execution, mostly by decoding the LEB128 values (from here the name), and
+pre-calculating some implicit values like blocks sizes.
+
+The name of the specification is also a tribute to the keyboard keys `W`, `A`,
+`S` & `D` traditionally used on PC games, that several people noticed greatly
+fit with the nomenclature of WebAssembly related projects but nobody used it yet
+:-P
+
+`WAsD` is heavily based on WebAssembly specification, for example on the
+general architecture or instructions set or instructions arguments. Main
+differences are:
+
+- Inlined destination of blocks and branches labels
+- Decoded LEB128 targets for `br_table`
+
+Future
+- Custom opcodes optimized with prefixes
+- Relative offsets
+- Decode all LEB128 values
 
 ## Keynotes
 

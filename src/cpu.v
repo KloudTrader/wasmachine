@@ -109,7 +109,6 @@ module cpu
   reg  [BLOCK_STACK_WIDTH-1:0] blockStack_data;
   reg  [BLOCK_STACK_DEPTH  :0] blockStack_offset;
   reg  [BLOCK_STACK_DEPTH  :0] blockStack_underflow = 0;
-  reg  [BLOCK_STACK_DEPTH  :0] blockStack_lower = 0;
   wire [BLOCK_STACK_DEPTH  :0] blockStack_index;
   wire [BLOCK_STACK_WIDTH-1:0] blockStack_out;
 
@@ -127,8 +126,8 @@ module cpu
     .data(blockStack_data),
     .offset(blockStack_offset),
     .underflow_limit(blockStack_underflow),
-    .upper_limit(blockStack_underflow),
-    .lower_limit(blockStack_lower),
+    .upper_limit(2'b0),
+    .lower_limit(2'b0),
     .index(blockStack_index),
     .out(blockStack_out),
     .status(blockStack_status),
@@ -241,21 +240,16 @@ module cpu
   wire[31:0] stack_out_32   = stack_out[31:0];
 
   // Block stack
-  wire[          1:0] blockStack_out_type       = blockStack_out[     TYPE_H:     TYPE_L];
-  wire[          6:0] blockStack_out_returnType = blockStack_out[   RETURN_H:   RETURN_L];
-  wire[  MEM_DEPTH:0] blockStack_out_PC         = blockStack_out[       PC_H:       PC_L];
-  wire[STACK_DEPTH:0] blockStack_out_index      = blockStack_out[    INDEX_H:    INDEX_L];
-  wire[STACK_DEPTH:0] blockStack_out_underflow  = blockStack_out[UNDERFLOW_H:UNDERFLOW_L];
+  wire[          1:0] blockStack_out_type  = blockStack_out[ TYPE_H: TYPE_L];
+  wire[  MEM_DEPTH:0] blockStack_out_PC    = blockStack_out[   PC_H:   PC_L];
+  wire[STACK_DEPTH:0] blockStack_out_index = blockStack_out[INDEX_H:INDEX_L];
 
   // Call stack
   wire[BLOCK_STACK_DEPTH:0] callStack_out_blockIndex     = callStack_out[    BLOCK_INDEX_H:    BLOCK_INDEX_L];
   wire[BLOCK_STACK_DEPTH:0] callStack_out_blockUnderflow = callStack_out[BLOCK_UNDERFLOW_H:BLOCK_UNDERFLOW_L];
   wire[      STACK_DEPTH:0] callStack_out_upper          = callStack_out[          UPPER_H:          UPPER_L];
   wire[      STACK_DEPTH:0] callStack_out_lower          = callStack_out[          LOWER_H:          LOWER_L];
-  wire[                6:0] callStack_out_returnType     = callStack_out[         RETURN_H:         RETURN_L];
-  wire[               31:0] callStack_out_PC             = callStack_out[             PC_H:             PC_L];
-  wire[      STACK_DEPTH:0] callStack_out_index          = callStack_out[          INDEX_H:          INDEX_L];
-  wire[      STACK_DEPTH:0] callStack_out_underflow      = callStack_out[      UNDERFLOW_H:      UNDERFLOW_L];
+
 
   //
   // CPU internal status
@@ -407,8 +401,8 @@ module cpu
   endtask
 
   task set_stack_data_32;
-    input [ 1:0] data_type;
-    input [31:0] value;
+    input [TYPE_WIDTH-1:0] data_type;
+    input [          31:0] value;
 
     if(USE_64B)
       stack_data <= {data_type, 32'b0, value};
@@ -417,8 +411,8 @@ module cpu
   endtask
 
   task set_stack_data_64;
-    input [ 1:0] data_type;
-    input [63:0] value;
+    input [TYPE_WIDTH-1:0] data_type;
+    input [          63:0] value;
 
     stack_data <= {data_type, value};
   endtask
@@ -489,8 +483,8 @@ module cpu
   endfunction
 
   function checkType;
-    input [1:0] actual;
-    input [1:0] expected;
+    input [TYPE_WIDTH-1:0] actual;
+    input [TYPE_WIDTH-1:0] expected;
 
     if(HAS_FPU || USE_64B)
       checkType = actual == expected;
@@ -746,6 +740,28 @@ module cpu
               end
 
               // Memory-related operators
+              `op_current_memory: begin
+                stack_op <= `PUSH;
+
+                if(!HAS_RAM)
+                  set_stack_data_32(`i32, 32'b0);
+                else
+                  trap <= `UNKOWN_OPCODE;
+
+                PC <= PC+leb128_len;
+              end
+
+              `op_grow_memory: begin
+                if(!HAS_RAM)
+                  trap <= `NO_RAM;
+
+                else begin
+                  trap <= `UNKOWN_OPCODE;
+
+                  stack_op <= `PUSH;
+                  PC <= PC+leb128_len;
+                end
+              end
 
               // Constants
               `op_i32_const: begin
@@ -818,6 +834,22 @@ module cpu
                 end
               end
 
+              `op_f32_eq: begin
+                if(!HAS_FPU)
+                  trap <= `NO_FPU;
+
+                else if(!checkType(stack_out1[DATA_WIDTH+1:DATA_WIDTH], `f32)
+                     || !checkType(stack_out [DATA_WIDTH+1:DATA_WIDTH], `f32))
+                  trap <= `TYPE_MISMATCH;
+
+                else begin
+                  f32_a <= stack_out1[31:0];
+                  f32_b <= stack_out [31:0];
+
+                  step <= EXEC2;
+                end
+              end
+
               // Numeric operators
               `op_i32_clz: begin
                 if(result_type != `i32)
@@ -863,7 +895,10 @@ module cpu
                     set_stack_data_32(`i32, 64);
 
                   else
-                    set_stack_data_32(`i32, {26'b0, clz32((stack_out[63:32] == 32'b0) ? stack_out[31:0] : stack_out[63:32])});
+                    set_stack_data_32(`i32, {26'b0,
+                                             clz32((stack_out[63:32] == 32'b0)
+                                                  ? stack_out[31: 0]
+                                                  : stack_out[63:32])});
                 end
               end
 
@@ -881,7 +916,10 @@ module cpu
                     set_stack_data_32(`i32, 64);
 
                   else
-                    set_stack_data_32(`i32, {26'b0, ctz32((stack_out[31:0] == 32'b0) ? stack_out[63:32] : stack_out[31:0])});
+                    set_stack_data_32(`i32, {26'b0,
+                                             ctz32((stack_out[31: 0] == 32'b0)
+                                                  ? stack_out[63:32]
+                                                  : stack_out[31: 0])});
                 end
               end
 
@@ -895,7 +933,8 @@ module cpu
                 else begin
                   stack_op <= `REPLACE;
 
-                  set_stack_data_32(`i32, cones32(stack_out_32[63:32])+cones32(stack_out_32[31:0]));
+                  set_stack_data_32(`i32, cones32(stack_out_32[63:32])
+                                        + cones32(stack_out_32[31: 0]));
                 end
               end
 
@@ -1219,6 +1258,17 @@ module cpu
 
         EXEC2: begin
           step <= EXEC3;
+
+          case (opcode)
+            `op_f32_eq: begin
+              stack_op     <= `INDEX_RESET_AND_PUSH;
+              stack_offset <= stack_index - 2;
+
+              comparison(f32_out);
+
+              step <= FETCH;
+            end
+          endcase
         end
 
         EXEC3: begin

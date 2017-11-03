@@ -1,0 +1,48 @@
+set_io sysclk 15
+set_io reset  44
+
+set_io leds[1] 40
+set_io leds[2] 51
+
+set_io buttons[1] 41
+set_io buttons[2] 42
+
+set_io sram_cs 78
+set_io sram_oe 74
+set_io sram_we 73
+
+set_io sd[ 0] 62
+set_io sd[ 1] 63
+set_io sd[ 2] 64
+set_io sd[ 3] 65
+set_io sd[ 4] 66
+set_io sd[ 5] 68
+set_io sd[ 6] 69
+set_io sd[ 7] 71
+set_io sd[ 8] 72
+set_io sd[ 9] 60
+set_io sd[10] 59
+set_io sd[11] 57
+set_io sd[12] 56
+set_io sd[13] 54
+set_io sd[14] 53
+set_io sd[15] 52
+
+set_io sa[ 0]  79
+set_io sa[ 1]  80
+set_io sa[ 2]  81
+set_io sa[ 3]  82
+set_io sa[ 4]  83
+set_io sa[ 5]  86
+set_io sa[ 6]  87
+set_io sa[ 7]  88
+set_io sa[ 8]  89
+set_io sa[ 9]  90
+set_io sa[10]  91
+set_io sa[11]  93
+set_io sa[12]  94
+set_io sa[13]  95
+set_io sa[14]  96
+set_io sa[15]  97
+set_io sa[16]  99
+set_io sa[17] 100

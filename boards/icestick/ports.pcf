@@ -1,0 +1,47 @@
+set_io leds[0] 99
+set_io leds[1] 98
+set_io leds[2] 97
+set_io leds[3] 96
+set_io stop    95
+
+set_io rstn_ini  3
+set_io clk      21
+
+set_io irda_rxd 106
+set_io irda_txd 105
+set_io irda_sd  107
+
+set_io uart_rx  9
+set_io uart_tx  8
+set_io uart_rts 7
+set_io uart_cts 4
+set_io uart_dtr 3
+set_io uart_dsr 2
+set_io uart_dcd 1
+
+set_io port0[2] 112
+set_io port0[3] 113
+set_io port0[4] 114
+set_io port0[5] 115
+set_io port0[6] 116
+set_io port0[7] 117
+set_io port0[8] 118
+set_io port0[9] 119
+
+set_io port1[2] 78
+set_io port1[3] 79
+set_io port1[4] 80
+set_io port1[5] 81
+set_io port1[6] 87
+set_io port1[7] 88
+set_io port1[8] 90
+set_io port1[9] 91
+
+set_io port2[10] 44
+set_io port2[11] 45
+set_io port2[12] 47
+set_io port2[13] 48
+set_io port2[14] 56
+set_io port2[15] 60
+set_io port2[16] 61
+set_io port2[17] 62
